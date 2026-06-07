@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext.jsx';
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/resume', label: 'Resume' },
+  { to: '/analysis', label: 'Analysis' },
+  { to: '/recommendations', label: 'Recommendations' },
 ];
 
 export default function AppLayout({ children }) {

@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Resume from './pages/Resume';
+import Analysis from './pages/Analysis';
+import Recommendations from './pages/Recommendations';
 
 function App() {
   return (
@@ -28,6 +30,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Resume />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/analysis"
+            element={
+              <ProtectedRoute>
+                <Analysis />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/recommendations"
+            element={
+              <ProtectedRoute>
+                <Recommendations />
               </ProtectedRoute>
             }
           />

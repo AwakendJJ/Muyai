@@ -75,6 +75,16 @@ All seed users use password: `Password123!`
 
 Requires `CLAUDE_API_KEY` (or `OPENAI_API_KEY` with `AI_PROVIDER=openai`) for resume parsing.
 
+### Analysis & Recommendations (Phase 4 — student+)
+
+| Method | Endpoint | Plan | Description |
+|--------|----------|------|-------------|
+| GET | `/api/analysis/job-roles` | student+ | List target job roles |
+| POST | `/api/analysis/gap` | student+ | Run AI gap analysis `{ resumeId, jobRoleId }` |
+| GET | `/api/analysis/gaps/:resumeId` | student+ | Get saved gaps (optional `?jobRoleId=`) |
+| GET | `/api/recommendations/:resumeId` | student+ | Career + course recommendations (cached) |
+| POST | `/api/recommendations/:resumeId/refresh` | student+ | Regenerate recommendations |
+
 ## API Response Format
 
 ```json

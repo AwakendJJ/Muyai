@@ -158,3 +158,93 @@ export async function extractPdfText(buffer) {
   const data = await pdfParse(buffer);
   return data.text?.trim() || '';
 }
+
+const GAP_ANALYSIS_SYSTEM = `You are a career skills analyst. Compare a candidate's current skills against a target job role.
+Always respond with valid JSON only — no markdown, no explanation.
+Use this exact schema:
+{
+  "missing_skills": [{ "skill": "string", "importance": "high|medium|low", "reason": "string" }]
+}`;
+
+const RECOMMENDATIONS_SYSTEM = `You are a career advisor for African talent. Based on skill gaps, suggest career paths and courses.
+Always respond with valid JSON only — no markdown, no explanation.
+Use this exact schema:
+{
+  "career_paths": [{ "title": "string", "description": "string", "fit_score": number }],
+  "courses": [{ "title": "string", "provider": "string", "url": "string", "covers_skill": "string" }]
+}`;
+
+const VALID_IMPORTANCE = new Set(['high', 'medium', 'low']);
+
+function validateGapAnalysis(data) {
+  if (!Array.isArray(data?.missing_skills)) {
+    throw new Error('AI response missing missing_skills array');
+  }
+
+  return data.missing_skills
+    .filter((g) => g?.skill)
+    .map((g) => ({
+      skill: String(g.skill).trim(),
+      importance: VALID_IMPORTANCE.has(g.importance) ? g.importance : 'medium',
+      reason: g.reason ? String(g.reason) : '',
+    }));
+}
+
+function validateRecommendations(data) {
+  if (!data || typeof data !== 'object') {
+    throw new Error('AI response is not a valid object');
+  }
+
+  const career_paths = Array.isArray(data.career_paths)
+    ? data.career_paths.map((c) => ({
+        title: String(c.title || '').trim(),
+        description: String(c.description || '').trim(),
+        fit_score: Number(c.fit_score) || 0,
+      })).filter((c) => c.title)
+    : [];
+
+  const courses = Array.isArray(data.courses)
+    ? data.courses.map((c) => ({
+        title: String(c.title || '').trim(),
+        provider: String(c.provider || '').trim(),
+        url: String(c.url || '').trim(),
+        covers_skill: String(c.covers_skill || '').trim(),
+      })).filter((c) => c.title)
+    : [];
+
+  return { career_paths, courses };
+}
+
+export async function analyzeSkillGaps(currentSkills, jobRole, userId) {
+  const skillsList = currentSkills.map((s) => `${s.skill_name} (${s.proficiency_level})`).join(', ');
+
+  const prompt = `Target role: ${jobRole.title}
+Required skills: ${jobRole.required_skills.join(', ')}
+Candidate's current skills: ${skillsList}
+
+Identify missing or underdeveloped skills needed for this role.`;
+
+  const { parsed } = await callAI(prompt, GAP_ANALYSIS_SYSTEM, {
+    userId,
+    feature: 'gap_analysis',
+  });
+
+  return validateGapAnalysis(parsed);
+}
+
+export async function generateRecommendations(skillGaps, userId) {
+  const gapsList = skillGaps
+    .map((g) => `${g.missing_skill} (${g.importance_rank} importance)`)
+    .join(', ');
+
+  const prompt = `Based on these skill gaps: ${gapsList}
+
+Suggest career paths and online courses to close these gaps. Focus on resources accessible to African talent.`;
+
+  const { parsed } = await callAI(prompt, RECOMMENDATIONS_SYSTEM, {
+    userId,
+    feature: 'recommendations',
+  });
+
+  return validateRecommendations(parsed);
+}

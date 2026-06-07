@@ -5,6 +5,8 @@ import multer from 'multer';
 import { testConnection } from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
 import resumeRoutes from './routes/resume.routes.js';
+import analysisRoutes from './routes/analysis.routes.js';
+import recommendationRoutes from './routes/recommendation.routes.js';
 
 dotenv.config();
 
@@ -16,6 +18,8 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/resumes', resumeRoutes);
+app.use('/api/analysis', analysisRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 
 app.get('/api/health', async (req, res) => {
   try {
