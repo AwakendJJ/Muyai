@@ -30,6 +30,16 @@ export default function AppLayout({ children }) {
                 {link.label}
               </NavLink>
             ))}
+            {user?.role === 'admin' && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  `text-sm font-medium transition-colors ${isActive ? 'text-pink' : 'text-gray-text hover:text-dark'}`
+                }
+              >
+                Admin
+              </NavLink>
+            )}
           </nav>
 
           <div className="flex items-center gap-4">

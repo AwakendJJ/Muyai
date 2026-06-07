@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard';
 import Resume from './pages/Resume';
 import Analysis from './pages/Analysis';
 import Recommendations from './pages/Recommendations';
+import Admin from './pages/Admin';
+import AdminRoute from './components/AdminRoute.jsx';
 
 function App() {
   return (
@@ -47,6 +49,14 @@ function App() {
               <ProtectedRoute>
                 <Recommendations />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <Admin />
+              </AdminRoute>
             }
           />
         </Routes>

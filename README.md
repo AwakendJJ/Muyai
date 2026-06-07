@@ -85,6 +85,15 @@ Requires `CLAUDE_API_KEY` (or `OPENAI_API_KEY` with `AI_PROVIDER=openai`) for re
 | GET | `/api/recommendations/:resumeId` | student+ | Career + course recommendations (cached) |
 | POST | `/api/recommendations/:resumeId/refresh` | student+ | Regenerate recommendations |
 
+### Admin (Phase 5 — admin role only)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/admin/users` | All users + plan distribution |
+| GET | `/api/admin/usage` | AI usage summary + recent log |
+
+Login as `admin@muyai.com` / `Password123!` to access `/admin`.
+
 ## API Response Format
 
 ```json
