@@ -1,16 +1,18 @@
+import { Link } from 'react-router-dom';
+
 export default function Home() {
   return (
     <div className="min-h-svh bg-surface">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <span className="text-xl font-bold tracking-tight">Muyai</span>
+        <Link to="/" className="text-xl font-bold tracking-tight">Muyai</Link>
         <nav className="hidden items-center gap-8 text-sm font-medium md:flex">
           <a href="#features" className="hover:text-pink transition-colors">Features</a>
           <a href="#how-it-works" className="hover:text-pink transition-colors">How it works</a>
           <a href="#pricing" className="hover:text-pink transition-colors">Pricing</a>
         </nav>
-        <a href="/register" className="btn-pill-dark text-sm">
+        <Link to="/register" className="btn-pill-dark text-sm">
           Get Started
-        </a>
+        </Link>
       </header>
 
       <main>
@@ -23,9 +25,9 @@ export default function Home() {
             career and course recommendations built for African talent.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-            <a href="/register" className="btn-pill-dark px-8 py-4 text-base">
+            <Link to="/register" className="btn-pill-dark px-8 py-4 text-base">
               Get Started Free
-            </a>
+            </Link>
             <a href="#features" className="btn-pill border border-dark/20 bg-white text-dark px-8 py-4 text-base hover:bg-muted">
               See Features
             </a>

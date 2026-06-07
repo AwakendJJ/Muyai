@@ -55,6 +55,14 @@ All seed users use password: `Password123!`
 | student@muyai.com | student | user |
 | pro@muyai.com | pro | user |
 
+## API Endpoints (Phase 2 — Auth)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/auth/register` | Public | Create account (defaults to free plan) |
+| POST | `/api/auth/login` | Public | Login, returns JWT + user |
+| GET | `/api/auth/me` | Bearer token | Current user profile |
+
 ## API Response Format
 
 ```json
