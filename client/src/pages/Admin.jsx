@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import * as adminApi from '../api/admin.js';
 import AppLayout from '../components/layout/AppLayout.jsx';
 import PlanBadge from '../components/PlanBadge.jsx';
-import PlanDistributionChart from '../components/PlanDistributionChart.jsx';
+import PlanDonutChart from '../components/charts/PlanDonutChart.jsx';
+import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const FEATURE_COLORS = {
@@ -38,9 +39,7 @@ export default function Admin() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="flex justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple border-t-transparent" />
-        </div>
+        <LoadingSpinner />
       </AppLayout>
     );
   }
@@ -76,7 +75,12 @@ export default function Admin() {
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <PlanDistributionChart distribution={planDistribution} />
+        <div className="card-rounded p-6">
+          <h3 className="font-bold">Plan distribution</h3>
+          <div className="mt-4">
+            <PlanDonutChart distribution={planDistribution} />
+          </div>
+        </div>
 
         <div className="card-rounded p-6">
           <h3 className="font-bold">AI usage by feature</h3>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import * as recommendationsApi from '../api/recommendations.js';
 import * as resumesApi from '../api/resumes.js';
 import AppLayout from '../components/layout/AppLayout.jsx';
+import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -71,9 +72,7 @@ export default function Recommendations() {
   if (loading && !selectedResumeId) {
     return (
       <AppLayout>
-        <div className="flex justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple border-t-transparent" />
-        </div>
+        <LoadingSpinner />
       </AppLayout>
     );
   }
@@ -135,9 +134,7 @@ export default function Recommendations() {
             </div>
 
             {loading ? (
-              <div className="flex justify-center py-16">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple border-t-transparent" />
-              </div>
+              <LoadingSpinner className="py-16" />
             ) : (
               <div className="mt-10 space-y-12">
                 <section>

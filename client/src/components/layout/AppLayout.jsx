@@ -1,49 +1,57 @@
-import { Link, NavLink } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import Sidebar from './Sidebar.jsx';
 import PlanBadge from '../PlanBadge.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 
-const NAV_LINKS = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/resume', label: 'Resume' },
-  { to: '/analysis', label: 'Analysis' },
-  { to: '/recommendations', label: 'Recommendations' },
-];
-
 export default function AppLayout({ children }) {
   const { user, logout } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-svh bg-muted">
-      <header className="border-b border-gray-100 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link to="/dashboard" className="text-xl font-bold">Muyai</Link>
+    <div className="flex min-h-svh bg-muted">
+      {/* Desktop sidebar */}
+      <div className="hidden w-64 shrink-0 border-r border-gray-100 lg:block">
+        <Sidebar />
+      </div>
 
-          <nav className="hidden items-center gap-6 md:flex">
-            {NAV_LINKS.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className={({ isActive }) =>
-                  `text-sm font-medium transition-colors ${isActive ? 'text-purple' : 'text-gray-text hover:text-dark'}`
-                }
-              >
-                {link.label}
-              </NavLink>
-            ))}
-            {user?.role === 'admin' && (
-              <NavLink
-                to="/admin"
-                className={({ isActive }) =>
-                  `text-sm font-medium transition-colors ${isActive ? 'text-pink' : 'text-gray-text hover:text-dark'}`
-                }
-              >
-                Admin
-              </NavLink>
-            )}
-          </nav>
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-dark/40"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close menu"
+          />
+          <div className="absolute left-0 top-0 h-full w-72 shadow-xl">
+            <Sidebar onNavigate={() => setMobileOpen(false)} />
+          </div>
+        </div>
+      )}
 
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Mobile header */}
+        <header className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-4 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="rounded-lg p-2 hover:bg-muted"
+            aria-label="Open menu"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <Link to="/dashboard" className="text-lg font-bold">Muyai</Link>
+          <PlanBadge plan={user?.plan} />
+        </header>
+
+        {/* Desktop top bar */}
+        <header className="hidden items-center justify-between border-b border-gray-100 bg-white px-8 py-4 lg:flex">
+          <div />
           <div className="flex items-center gap-4">
-            <PlanBadge plan={user?.plan} />
+            <span className="text-sm text-gray-text">{user?.name}</span>
             <button
               type="button"
               onClick={logout}
@@ -52,10 +60,10 @@ export default function AppLayout({ children }) {
               Log out
             </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
+        <main className="flex-1 px-4 py-8 lg:px-8">{children}</main>
+      </div>
     </div>
   );
 }

@@ -4,15 +4,22 @@ AI-powered career development platform for African talent.
 
 ## Design
 
-UI follows the [Tokko](https://tokko.framer.website/) visual language — vibrant pink/purple/blue palette, pill buttons, rounded cards, and bold typography. Applied across landing page, dashboard, and all app components.
+UI follows the [Tokko](https://tokko.framer.website/) visual language — vibrant pink/purple/blue palette, pill buttons, rounded cards, and bold typography across landing page, sidebar dashboard, and all app components.
 
 ## Tech Stack
 
-- **Frontend:** React + Vite + Tailwind CSS
+- **Frontend:** React + Vite + Tailwind CSS + Recharts
 - **Backend:** Node.js + Express
 - **Database:** MySQL
+- **AI:** Claude API (default) or OpenAI-compatible APIs
 
-## Setup
+## Prerequisites
+
+- Node.js 18+
+- MySQL 8+
+- Claude API key (or OpenAI API key)
+
+## Quick Start
 
 ### 1. Database
 
@@ -26,12 +33,25 @@ mysql -u root -p < database/seed.sql
 ```bash
 cd server
 cp .env.example .env
-# Edit .env with your credentials
+```
+
+Edit `.env` with your credentials:
+
+```
+CLAUDE_API_KEY=your-key-here
+JWT_SECRET=your-secret-here
+DB_HOST=localhost
+DB_USER=root
+DB_PASS=your-password
+DB_NAME=muyai
+```
+
+```bash
 npm install
 npm run dev
 ```
 
-Server runs at `http://localhost:5000`
+Server: `http://localhost:5000`
 
 ### 3. Client
 
@@ -42,11 +62,24 @@ npm install
 npm run dev
 ```
 
-Client runs at `http://localhost:5173`
+Client: `http://localhost:5173`
+
+## Pages
+
+| Route | Access | Description |
+|-------|--------|-------------|
+| `/` | Public | Tokko-style landing page |
+| `/register` | Public | Create account |
+| `/login` | Public | Sign in |
+| `/dashboard` | Auth | Stats, skill chart, quick actions |
+| `/resume` | Auth | Upload PDF, view extracted skills |
+| `/analysis` | Student+ | Gap analysis with bar chart |
+| `/recommendations` | Student+ | Career paths + courses |
+| `/admin` | Admin | Users table, AI usage, plan donut chart |
 
 ## Seed Users
 
-All seed users use password: `Password123!`
+Password for all: `Password123!`
 
 | Email | Plan | Role |
 |-------|------|------|
@@ -55,47 +88,91 @@ All seed users use password: `Password123!`
 | student@muyai.com | student | user |
 | pro@muyai.com | pro | user |
 
+## Plan Tiers
+
+| Plan | Features |
+|------|----------|
+| **Free** | 2 resume scans, basic skill report |
+| **Student** | Unlimited scans, gap analysis, recommendations |
+| **Pro** | Everything in Student + job matching, cover letters, tracker (Phase 2) |
+
 ## API Endpoints
 
-### Auth (Phase 2)
+### Auth
+- `POST /api/auth/register` — Create account
+- `POST /api/auth/login` — Login, returns JWT
+- `GET /api/auth/me` — Current user (Bearer token)
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/auth/register` | Public | Create account (defaults to free plan) |
-| POST | `/api/auth/login` | Public | Login, returns JWT + user |
-| GET | `/api/auth/me` | Bearer token | Current user profile |
+### Resumes
+- `GET /api/resumes` — List resumes + scan count
+- `POST /api/resumes/upload` — Upload PDF, AI skill extraction
+- `GET /api/resumes/:id/skills` — Skills for a resume
 
-### Resumes (Phase 3)
+### Analysis (student+)
+- `GET /api/analysis/job-roles` — Target job roles
+- `POST /api/analysis/gap` — Run gap analysis `{ resumeId, jobRoleId }`
+- `GET /api/analysis/gaps/:resumeId` — Saved gaps
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/resumes` | Bearer token | List user's resumes + scan count |
-| POST | `/api/resumes/upload` | Bearer token | Upload PDF, AI skill extraction (free: max 2) |
-| GET | `/api/resumes/:id/skills` | Bearer token | Skills for a resume |
+### Recommendations (student+)
+- `GET /api/recommendations/:resumeId` — Career + course recs (cached)
+- `POST /api/recommendations/:resumeId/refresh` — Regenerate
 
-Requires `CLAUDE_API_KEY` (or `OPENAI_API_KEY` with `AI_PROVIDER=openai`) for resume parsing.
+### Admin (admin only)
+- `GET /api/admin/users` — Users + plan distribution
+- `GET /api/admin/usage` — AI usage summary
 
-### Analysis & Recommendations (Phase 4 — student+)
+### Health
+- `GET /api/health` — Server + DB status
 
-| Method | Endpoint | Plan | Description |
-|--------|----------|------|-------------|
-| GET | `/api/analysis/job-roles` | student+ | List target job roles |
-| POST | `/api/analysis/gap` | student+ | Run AI gap analysis `{ resumeId, jobRoleId }` |
-| GET | `/api/analysis/gaps/:resumeId` | student+ | Get saved gaps (optional `?jobRoleId=`) |
-| GET | `/api/recommendations/:resumeId` | student+ | Career + course recommendations (cached) |
-| POST | `/api/recommendations/:resumeId/refresh` | student+ | Regenerate recommendations |
-
-### Admin (Phase 5 — admin role only)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/admin/users` | All users + plan distribution |
-| GET | `/api/admin/usage` | AI usage summary + recent log |
-
-Login as `admin@muyai.com` / `Password123!` to access `/admin`.
-
-## API Response Format
+## Response Format
 
 ```json
 { "success": true, "data": {}, "error": null }
 ```
+
+## Project Structure
+
+```
+/client          React frontend
+/server
+  /routes        Express route modules
+  /controllers   Request handlers
+  /middleware    auth, plan, admin guards
+  /services      ai.service.js (all AI calls)
+  /models        Database access
+/database
+  schema.sql     MySQL tables
+  seed.sql       Test users + job roles
+```
+
+## Environment Variables
+
+**Server** (`server/.env`):
+
+| Variable | Description |
+|----------|-------------|
+| `CLAUDE_API_KEY` | Anthropic API key |
+| `OPENAI_API_KEY` | OpenAI key (if using openai provider) |
+| `JWT_SECRET` | JWT signing secret |
+| `DB_HOST` | MySQL host |
+| `DB_USER` | MySQL user |
+| `DB_PASS` | MySQL password |
+| `DB_NAME` | Database name (muyai) |
+| `AI_PROVIDER` | `claude` or `openai` |
+| `AI_MODEL` | Model name |
+| `PORT` | Server port (5000) |
+
+**Client** (`client/.env`):
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_API_URL` | API base URL (`http://localhost:5000/api`) |
+
+## Production Build
+
+```bash
+cd client && npm run build
+cd server && npm start
+```
+
+Serve `client/dist` via your preferred static host or proxy through Express.

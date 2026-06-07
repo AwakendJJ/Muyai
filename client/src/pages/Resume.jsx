@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as resumesApi from '../api/resumes.js';
 import AppLayout from '../components/layout/AppLayout.jsx';
+import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import SkillTable from '../components/SkillTable.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -81,9 +82,7 @@ export default function Resume() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="flex justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple border-t-transparent" />
-        </div>
+        <LoadingSpinner />
       </AppLayout>
     );
   }

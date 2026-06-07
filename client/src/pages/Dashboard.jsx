@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import * as resumesApi from '../api/resumes.js';
+import SkillProficiencyChart from '../components/charts/SkillProficiencyChart.jsx';
 import AppLayout from '../components/layout/AppLayout.jsx';
+import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import SkillTable from '../components/SkillTable.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -36,17 +38,10 @@ export default function Dashboard() {
 
   const planCard = PLAN_CARDS[user?.plan] || PLAN_CARDS.free;
 
-  const skillBreakdown = skills.reduce((acc, skill) => {
-    acc[skill.proficiency_level] = (acc[skill.proficiency_level] || 0) + 1;
-    return acc;
-  }, {});
-
   if (loading) {
     return (
       <AppLayout>
-        <div className="flex justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple border-t-transparent" />
-        </div>
+        <LoadingSpinner />
       </AppLayout>
     );
   }
@@ -56,42 +51,50 @@ export default function Dashboard() {
       <h1 className="text-3xl font-bold">Welcome, {user?.name}</h1>
       <p className="mt-2 text-gray-text">Your career development hub</p>
 
-      <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <div className={`${planCard.color} rounded-2xl p-6 text-white`}>
           <p className="text-sm opacity-80">Your plan</p>
           <p className="mt-1 text-2xl font-bold">{planCard.label}</p>
           <p className="mt-2 text-sm opacity-90">{planCard.desc}</p>
         </div>
-
         <div className="card-rounded p-6">
           <p className="text-sm text-gray-text">Resumes scanned</p>
-          <p className="mt-1 text-2xl font-bold">
-            {scanCount}{scanLimit !== null ? ` / ${scanLimit}` : ''}
-          </p>
+          <p className="mt-1 text-2xl font-bold">{scanCount}{scanLimit !== null ? ` / ${scanLimit}` : ''}</p>
         </div>
-
         <div className="card-rounded p-6">
           <p className="text-sm text-gray-text">Skills found</p>
           <p className="mt-1 text-2xl font-bold">{skills.length}</p>
         </div>
-
         <div className="card-rounded p-6">
           <p className="text-sm text-gray-text">Latest resume</p>
-          <p className="mt-1 truncate text-lg font-bold">
-            {resumes[0]?.filename || 'None yet'}
-          </p>
+          <p className="mt-1 truncate text-lg font-bold">{resumes[0]?.filename || 'None yet'}</p>
         </div>
       </div>
 
       {skills.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-xl font-bold">Skill proficiency</h2>
-          <div className="mt-4 flex flex-wrap gap-3">
-            {Object.entries(skillBreakdown).map(([level, count]) => (
-              <span key={level} className="pill-tag capitalize">
-                {level}: {count}
-              </span>
-            ))}
+        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+          <div className="card-rounded p-6">
+            <h2 className="text-xl font-bold">Skill proficiency</h2>
+            <div className="mt-4">
+              <SkillProficiencyChart skills={skills} />
+            </div>
+          </div>
+          <div className="card-rounded p-6">
+            <h2 className="text-xl font-bold">Quick actions</h2>
+            <div className="mt-4 space-y-3">
+              <Link to="/resume" className="flex items-center justify-between rounded-xl bg-muted/50 px-4 py-4 hover:bg-muted">
+                <span className="font-medium">Upload or view resume</span>
+                <span className="text-purple">→</span>
+              </Link>
+              <Link to="/analysis" className="flex items-center justify-between rounded-xl bg-muted/50 px-4 py-4 hover:bg-muted">
+                <span className="font-medium">Run gap analysis</span>
+                <span className="text-purple">→</span>
+              </Link>
+              <Link to="/recommendations" className="flex items-center justify-between rounded-xl bg-muted/50 px-4 py-4 hover:bg-muted">
+                <span className="font-medium">View recommendations</span>
+                <span className="text-purple">→</span>
+              </Link>
+            </div>
           </div>
         </div>
       )}
@@ -103,7 +106,6 @@ export default function Dashboard() {
             {resumes.length ? 'View all' : 'Upload resume'}
           </Link>
         </div>
-
         {skills.length > 0 ? (
           <div className="mt-4">
             <SkillTable skills={skills.slice(0, 8)} />
@@ -111,9 +113,7 @@ export default function Dashboard() {
         ) : (
           <div className="mt-4 card-rounded p-8 text-center">
             <p className="text-gray-text">No resume uploaded yet.</p>
-            <Link to="/resume" className="btn-pill-purple mt-4 inline-flex">
-              Upload your first resume
-            </Link>
+            <Link to="/resume" className="btn-pill-purple mt-4 inline-flex">Upload your first resume</Link>
           </div>
         )}
       </div>
@@ -124,6 +124,7 @@ export default function Dashboard() {
           <p className="mt-1 text-sm text-gray-text">
             Get unlimited scans, gap analysis, and personalized course recommendations.
           </p>
+          <a href="/#pricing" className="btn-pill-purple mt-4 inline-flex text-sm">View plans</a>
         </div>
       )}
     </AppLayout>

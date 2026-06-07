@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import * as analysisApi from '../api/analysis.js';
 import * as resumesApi from '../api/resumes.js';
 import AppLayout from '../components/layout/AppLayout.jsx';
-import GapChart from '../components/GapChart.jsx';
+import GapBarChart from '../components/charts/GapBarChart.jsx';
+import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import PlanGate from '../components/PlanGate.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -87,9 +88,7 @@ export default function Analysis() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="flex justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple border-t-transparent" />
-        </div>
+        <LoadingSpinner />
       </AppLayout>
     );
   }
@@ -156,7 +155,12 @@ export default function Analysis() {
 
             {gaps.length > 0 && (
               <div className="mt-10 grid gap-6 lg:grid-cols-2">
-                <GapChart gaps={gaps} />
+                <div className="card-rounded p-6">
+                  <h3 className="font-bold">Gap importance breakdown</h3>
+                  <div className="mt-4">
+                    <GapBarChart gaps={gaps} />
+                  </div>
+                </div>
 
                 <div className="card-rounded p-6">
                   <h3 className="font-bold">
