@@ -55,13 +55,25 @@ All seed users use password: `Password123!`
 | student@muyai.com | student | user |
 | pro@muyai.com | pro | user |
 
-## API Endpoints (Phase 2 — Auth)
+## API Endpoints
+
+### Auth (Phase 2)
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | POST | `/api/auth/register` | Public | Create account (defaults to free plan) |
 | POST | `/api/auth/login` | Public | Login, returns JWT + user |
 | GET | `/api/auth/me` | Bearer token | Current user profile |
+
+### Resumes (Phase 3)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/resumes` | Bearer token | List user's resumes + scan count |
+| POST | `/api/resumes/upload` | Bearer token | Upload PDF, AI skill extraction (free: max 2) |
+| GET | `/api/resumes/:id/skills` | Bearer token | Skills for a resume |
+
+Requires `CLAUDE_API_KEY` (or `OPENAI_API_KEY` with `AI_PROVIDER=openai`) for resume parsing.
 
 ## API Response Format
 

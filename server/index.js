@@ -1,8 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import multer from 'multer';
 import { testConnection } from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
+import resumeRoutes from './routes/resume.routes.js';
 
 dotenv.config();
 
@@ -13,6 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/resumes', resumeRoutes);
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -41,6 +44,15 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
   console.error(err);
+
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      success: false,
+      data: null,
+      error: err.code === 'LIMIT_FILE_SIZE' ? 'File must be under 5MB' : err.message,
+    });
+  }
+
   res.status(err.status || 500).json({
     success: false,
     data: null,

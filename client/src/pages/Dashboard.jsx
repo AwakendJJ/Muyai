@@ -1,45 +1,131 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import PlanBadge from '../components/PlanBadge.jsx';
+import * as resumesApi from '../api/resumes.js';
+import AppLayout from '../components/layout/AppLayout.jsx';
+import SkillTable from '../components/SkillTable.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
+const PLAN_CARDS = {
+  free: { color: 'bg-pink', label: 'Free', desc: '2 scans, basic skill report' },
+  student: { color: 'bg-purple', label: 'Student', desc: 'Unlimited scans, gap analysis' },
+  pro: { color: 'bg-blue', label: 'Pro', desc: 'Job matching, cover letters, tracker' },
+};
+
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, token } = useAuth();
+  const [resumes, setResumes] = useState([]);
+  const [skills, setSkills] = useState([]);
+  const [scanCount, setScanCount] = useState(0);
+  const [scanLimit, setScanLimit] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    resumesApi.listResumes(token)
+      .then(async (response) => {
+        setResumes(response.data.resumes);
+        setScanCount(response.data.scan_count);
+        setScanLimit(response.data.scan_limit);
+
+        if (response.data.resumes.length > 0) {
+          const skillsRes = await resumesApi.getSkills(token, response.data.resumes[0].id);
+          setSkills(skillsRes.data.skills);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const planCard = PLAN_CARDS[user?.plan] || PLAN_CARDS.free;
+
+  const skillBreakdown = skills.reduce((acc, skill) => {
+    acc[skill.proficiency_level] = (acc[skill.proficiency_level] || 0) + 1;
+    return acc;
+  }, {});
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex justify-center py-20">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple border-t-transparent" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
-    <div className="min-h-svh bg-muted">
-      <header className="border-b border-gray-100 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link to="/" className="text-xl font-bold">Muyai</Link>
-          <div className="flex items-center gap-4">
-            <PlanBadge plan={user?.plan} />
-            <button type="button" onClick={logout} className="text-sm font-medium text-gray-text hover:text-dark">
-              Log out
-            </button>
+    <AppLayout>
+      <h1 className="text-3xl font-bold">Welcome, {user?.name}</h1>
+      <p className="mt-2 text-gray-text">Your career development hub</p>
+
+      <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={`${planCard.color} rounded-2xl p-6 text-white`}>
+          <p className="text-sm opacity-80">Your plan</p>
+          <p className="mt-1 text-2xl font-bold">{planCard.label}</p>
+          <p className="mt-2 text-sm opacity-90">{planCard.desc}</p>
+        </div>
+
+        <div className="card-rounded p-6">
+          <p className="text-sm text-gray-text">Resumes scanned</p>
+          <p className="mt-1 text-2xl font-bold">
+            {scanCount}{scanLimit !== null ? ` / ${scanLimit}` : ''}
+          </p>
+        </div>
+
+        <div className="card-rounded p-6">
+          <p className="text-sm text-gray-text">Skills found</p>
+          <p className="mt-1 text-2xl font-bold">{skills.length}</p>
+        </div>
+
+        <div className="card-rounded p-6">
+          <p className="text-sm text-gray-text">Latest resume</p>
+          <p className="mt-1 truncate text-lg font-bold">
+            {resumes[0]?.filename || 'None yet'}
+          </p>
+        </div>
+      </div>
+
+      {skills.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-bold">Skill proficiency</h2>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {Object.entries(skillBreakdown).map(([level, count]) => (
+              <span key={level} className="pill-tag capitalize">
+                {level}: {count}
+              </span>
+            ))}
           </div>
         </div>
-      </header>
+      )}
 
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        <h1 className="text-3xl font-bold">Welcome, {user?.name}</h1>
-        <p className="mt-2 text-gray-text">
-          Your dashboard is ready. Resume upload and skill analysis coming in Phase 3.
-        </p>
-
-        <div className="mt-8 grid gap-6 sm:grid-cols-3">
-          <div className="card-rounded p-6">
-            <p className="text-sm text-gray-text">Plan</p>
-            <p className="mt-1 text-xl font-bold capitalize">{user?.plan}</p>
-          </div>
-          <div className="card-rounded p-6">
-            <p className="text-sm text-gray-text">Email</p>
-            <p className="mt-1 text-xl font-bold">{user?.email}</p>
-          </div>
-          <div className="card-rounded p-6">
-            <p className="text-sm text-gray-text">Role</p>
-            <p className="mt-1 text-xl font-bold capitalize">{user?.role}</p>
-          </div>
+      <div className="mt-8">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold">Skill summary</h2>
+          <Link to="/resume" className="text-sm font-semibold text-purple hover:underline">
+            {resumes.length ? 'View all' : 'Upload resume'}
+          </Link>
         </div>
-      </main>
-    </div>
+
+        {skills.length > 0 ? (
+          <div className="mt-4">
+            <SkillTable skills={skills.slice(0, 8)} />
+          </div>
+        ) : (
+          <div className="mt-4 card-rounded p-8 text-center">
+            <p className="text-gray-text">No resume uploaded yet.</p>
+            <Link to="/resume" className="btn-pill-purple mt-4 inline-flex">
+              Upload your first resume
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {user?.plan === 'free' && (
+        <div className="mt-8 card-rounded border-2 border-purple/20 bg-purple/5 p-6">
+          <h3 className="font-bold">Unlock more with Student</h3>
+          <p className="mt-1 text-sm text-gray-text">
+            Get unlimited scans, gap analysis, and personalized course recommendations.
+          </p>
+        </div>
+      )}
+    </AppLayout>
   );
 }
