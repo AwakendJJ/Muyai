@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pink: #FF007A;
+  --color-purple: #9D00FF;
+  --color-blue: #007AFF;
+  --color-orange: #FF5C00;
+  --color-surface: #FFFFFF;
+  --color-muted: #F5F5F7;
+  --color-dark: #111111;
+  --color-gray-text: #6B7280;
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-dark font-sans antialiased;
+    margin: 0;
+  }
+
+  #root {
+    min-height: 100svh;
+  }
+}
+
+@layer components {
+  .btn-pill {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200;
+  }
+
+  .btn-pill-dark {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-dark text-white hover:opacity-90;
+  }
+
+  .btn-pill-pink {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-pink text-white hover:opacity-90;
+  }
+
+  .btn-pill-purple {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-purple text-white hover:opacity-90;
+  }
+
+  .btn-pill-blue {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-blue text-white hover:opacity-90;
+  }
+
+  .card-rounded {
+    @apply rounded-2xl bg-white shadow-sm border border-gray-100;
+  }
+
+  .pill-tag {
+    @apply inline-flex items-center gap-2 rounded-full bg-blue px-4 py-2 text-sm font-medium text-white;
+  }
+
+  .plan-badge-free {
+    @apply inline-flex rounded-full bg-pink/10 px-3 py-1 text-xs font-semibold text-pink;
+  }
+
+  .plan-badge-student {
+    @apply inline-flex rounded-full bg-purple/10 px-3 py-1 text-xs font-semibold text-purple;
+  }
+
+  .plan-badge-pro {
+    @apply inline-flex rounded-full bg-blue/10 px-3 py-1 text-xs font-semibold text-blue;
+  }
+}
