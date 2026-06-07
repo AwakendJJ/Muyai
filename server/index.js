@@ -71,12 +71,22 @@ async function start() {
     await testConnection();
     console.log('Database connected');
   } catch (error) {
-    console.warn('Warning: Database not connected. Ensure MySQL is running and schema is imported.');
+    console.warn('Warning: Supabase not connected. Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env');
     console.warn(error.message);
   }
 
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`Muyai server running on http://localhost:${PORT}`);
+  });
+
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Port ${PORT} is already in use. Stop the other process or change PORT in .env`);
+      console.error(`Windows: netstat -ano | findstr :${PORT}  then  taskkill /PID <pid> /F`);
+    } else {
+      console.error('Server error:', error.message);
+    }
+    process.exit(1);
   });
 }
 

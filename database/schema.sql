@@ -1,73 +1,72 @@
-CREATE DATABASE IF NOT EXISTS muyai;
-USE muyai;
+-- Muyai schema for Supabase (PostgreSQL)
+-- Run this in Supabase SQL Editor: Dashboard → SQL → New query
 
 CREATE TABLE IF NOT EXISTS users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id BIGSERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  plan ENUM('free', 'student', 'pro') NOT NULL DEFAULT 'free',
-  role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  plan TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'student', 'pro')),
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS resumes (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   filename VARCHAR(255) NOT NULL,
   raw_text TEXT,
-  uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_resumes_user_id (user_id)
+  uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_resumes_user_id ON resumes(user_id);
 
 CREATE TABLE IF NOT EXISTS skills (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  resume_id INT NOT NULL,
+  id BIGSERIAL PRIMARY KEY,
+  resume_id BIGINT NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
   skill_name VARCHAR(100) NOT NULL,
-  proficiency_level ENUM('beginner', 'intermediate', 'advanced') NOT NULL,
-  category VARCHAR(100),
-  FOREIGN KEY (resume_id) REFERENCES resumes(id) ON DELETE CASCADE,
-  INDEX idx_skills_resume_id (resume_id)
+  proficiency_level TEXT NOT NULL CHECK (proficiency_level IN ('beginner', 'intermediate', 'advanced')),
+  category VARCHAR(100)
 );
 
+CREATE INDEX IF NOT EXISTS idx_skills_resume_id ON skills(resume_id);
+
 CREATE TABLE IF NOT EXISTS job_roles (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id BIGSERIAL PRIMARY KEY,
   title VARCHAR(150) NOT NULL,
-  required_skills JSON NOT NULL
+  required_skills JSONB NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS skill_gaps (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  resume_id INT NOT NULL,
-  job_role_id INT NOT NULL,
+  id BIGSERIAL PRIMARY KEY,
+  resume_id BIGINT NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+  job_role_id BIGINT NOT NULL REFERENCES job_roles(id) ON DELETE CASCADE,
   missing_skill VARCHAR(100) NOT NULL,
-  importance_rank ENUM('high', 'medium', 'low') NOT NULL,
-  FOREIGN KEY (resume_id) REFERENCES resumes(id) ON DELETE CASCADE,
-  FOREIGN KEY (job_role_id) REFERENCES job_roles(id) ON DELETE CASCADE,
-  INDEX idx_skill_gaps_resume_id (resume_id)
+  importance_rank TEXT NOT NULL CHECK (importance_rank IN ('high', 'medium', 'low'))
 );
+
+CREATE INDEX IF NOT EXISTS idx_skill_gaps_resume_id ON skill_gaps(resume_id);
 
 CREATE TABLE IF NOT EXISTS recommendations (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  resume_id INT NOT NULL,
-  type ENUM('career', 'course') NOT NULL,
+  id BIGSERIAL PRIMARY KEY,
+  resume_id BIGINT NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('career', 'course')),
   title VARCHAR(255) NOT NULL,
   description TEXT,
-  url VARCHAR(500),
-  FOREIGN KEY (resume_id) REFERENCES resumes(id) ON DELETE CASCADE,
-  INDEX idx_recommendations_resume_id (resume_id)
+  url VARCHAR(500)
 );
 
+CREATE INDEX IF NOT EXISTS idx_recommendations_resume_id ON recommendations(resume_id);
+
 CREATE TABLE IF NOT EXISTS ai_usage (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   feature VARCHAR(50) NOT NULL,
   provider VARCHAR(50) NOT NULL,
   model VARCHAR(100) NOT NULL,
-  tokens_used INT NOT NULL DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  INDEX idx_ai_usage_user_id (user_id),
-  INDEX idx_ai_usage_created_at (created_at)
+  tokens_used INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_ai_usage_user_id ON ai_usage(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_created_at ON ai_usage(created_at);

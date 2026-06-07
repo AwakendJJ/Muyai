@@ -4,46 +4,77 @@ AI-powered career development platform for African talent.
 
 ## Design
 
-UI follows the [Tokko](https://tokko.framer.website/) visual language — vibrant pink/purple/blue palette, pill buttons, rounded cards, and bold typography across landing page, sidebar dashboard, and all app components.
+UI follows the [Tokko](https://tokko.framer.website/) visual language — vibrant pink/purple/blue palette, pill buttons, rounded cards, and bold typography.
 
 ## Tech Stack
 
 - **Frontend:** React + Vite + Tailwind CSS + Recharts
 - **Backend:** Node.js + Express
-- **Database:** MySQL
+- **Database:** [Supabase](https://supabase.com) (PostgreSQL)
 - **AI:** Claude API (default) or OpenAI-compatible APIs
 
 ## Prerequisites
 
 - Node.js 18+
-- MySQL 8+
-- Claude API key (or OpenAI API key)
+- A [Supabase](https://supabase.com) project (free tier works)
+- Claude API key (for resume upload / AI features)
 
-## Quick Start
+---
 
-### 1. Database
+## Setup Guide (Supabase)
 
-```bash
-mysql -u root -p < database/schema.sql
-mysql -u root -p < database/seed.sql
-```
+### Step 1 — Create a Supabase project
 
-### 2. Server
+1. Go to [supabase.com](https://supabase.com) and sign in
+2. Click **New project**
+3. Choose an organization, name it `muyai`, set a database password, pick a region
+4. Wait for the project to finish provisioning (~2 min)
+
+### Step 2 — Run the database schema
+
+1. In your Supabase dashboard, open **SQL Editor**
+2. Click **New query**
+3. Copy the entire contents of [`database/schema.sql`](database/schema.sql) and paste it in
+4. Click **Run** — you should see "Success. No rows returned"
+5. Open **Table Editor** — confirm these tables exist:
+   - `users`, `resumes`, `skills`, `job_roles`, `skill_gaps`, `recommendations`, `ai_usage`
+
+### Step 3 — Seed test data
+
+1. In **SQL Editor**, open a new query
+2. Copy the entire contents of [`database/seed.sql`](database/seed.sql) and run it
+3. In **Table Editor → users**, confirm 4 seed users appear
+4. In **Table Editor → job_roles**, confirm 5 roles appear
+
+> Only run `seed.sql` once. Running it again is safe for users (emails conflict-skip) but will duplicate job roles.
+
+### Step 4 — Get your Supabase credentials
+
+1. In Supabase dashboard, go to **Project Settings → API**
+2. Copy these values:
+
+| Setting | Where to find it | Used as |
+|---------|------------------|---------|
+| Project URL | `URL` field | `SUPABASE_URL` |
+| service_role key | `service_role` under Project API keys | `SUPABASE_SERVICE_ROLE_KEY` |
+
+> Use the **service_role** key on the server only — never expose it in the frontend or commit it to git.
+
+### Step 5 — Configure the server
 
 ```bash
 cd server
 cp .env.example .env
 ```
 
-Edit `.env` with your credentials:
+Edit `server/.env`:
 
-```
-CLAUDE_API_KEY=your-key-here
-JWT_SECRET=your-secret-here
-DB_HOST=localhost
-DB_USER=root
-DB_PASS=your-password
-DB_NAME=muyai
+```env
+SUPABASE_URL=https://xxxxxxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
+JWT_SECRET=any-long-random-string
+CLAUDE_API_KEY=sk-ant-...
+PORT=5000
 ```
 
 ```bash
@@ -51,9 +82,19 @@ npm install
 npm run dev
 ```
 
-Server: `http://localhost:5000`
+**Expected output:**
+```
+Database connected
+Muyai server running on http://localhost:5000
+```
 
-### 3. Client
+**Verify:** Open `http://localhost:5000/api/health`
+
+```json
+{ "success": true, "data": { "status": "ok", "database": "connected" }, "error": null }
+```
+
+### Step 6 — Configure and start the client
 
 ```bash
 cd client
@@ -62,20 +103,41 @@ npm install
 npm run dev
 ```
 
-Client: `http://localhost:5173`
+Open `http://localhost:5173`
 
-## Pages
+---
 
-| Route | Access | Description |
-|-------|--------|-------------|
-| `/` | Public | Tokko-style landing page |
-| `/register` | Public | Create account |
-| `/login` | Public | Sign in |
-| `/dashboard` | Auth | Stats, skill chart, quick actions |
-| `/resume` | Auth | Upload PDF, view extracted skills |
-| `/analysis` | Student+ | Gap analysis with bar chart |
-| `/recommendations` | Student+ | Career paths + courses |
-| `/admin` | Admin | Users table, AI usage, plan donut chart |
+## Verification Checklist
+
+### Database
+- [ ] All 7 tables visible in Supabase Table Editor
+- [ ] 4 seed users in `users` table
+- [ ] 5 job roles in `job_roles` table
+- [ ] `/api/health` returns `"database": "connected"`
+
+### Auth
+- [ ] Login with `student@muyai.com` / `Password123!` → lands on dashboard
+- [ ] Register new account works
+- [ ] `/dashboard` redirects to `/login` when logged out
+
+### Resume (needs `CLAUDE_API_KEY`)
+- [ ] Upload PDF at `/resume` → skills extracted
+- [ ] Dashboard shows skill donut chart
+- [ ] Free user blocked after 2 uploads
+
+### Analysis (student+)
+- [ ] Login as `student@muyai.com`
+- [ ] `/analysis` → run gap analysis → bar chart + missing skills
+- [ ] Free user sees upgrade banner on `/analysis`
+
+### Recommendations (student+)
+- [ ] `/recommendations` shows career paths + courses after gap analysis
+
+### Admin
+- [ ] Login as `admin@muyai.com` → `/admin` shows users + AI usage
+- [ ] Non-admin redirected from `/admin`
+
+---
 
 ## Seed Users
 
@@ -99,51 +161,42 @@ Password for all: `Password123!`
 ## API Endpoints
 
 ### Auth
-- `POST /api/auth/register` — Create account
-- `POST /api/auth/login` — Login, returns JWT
-- `GET /api/auth/me` — Current user (Bearer token)
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
 
 ### Resumes
-- `GET /api/resumes` — List resumes + scan count
-- `POST /api/resumes/upload` — Upload PDF, AI skill extraction
-- `GET /api/resumes/:id/skills` — Skills for a resume
+- `GET /api/resumes`
+- `POST /api/resumes/upload`
+- `GET /api/resumes/:id/skills`
 
 ### Analysis (student+)
-- `GET /api/analysis/job-roles` — Target job roles
-- `POST /api/analysis/gap` — Run gap analysis `{ resumeId, jobRoleId }`
-- `GET /api/analysis/gaps/:resumeId` — Saved gaps
+- `GET /api/analysis/job-roles`
+- `POST /api/analysis/gap`
+- `GET /api/analysis/gaps/:resumeId`
 
 ### Recommendations (student+)
-- `GET /api/recommendations/:resumeId` — Career + course recs (cached)
-- `POST /api/recommendations/:resumeId/refresh` — Regenerate
+- `GET /api/recommendations/:resumeId`
+- `POST /api/recommendations/:resumeId/refresh`
 
 ### Admin (admin only)
-- `GET /api/admin/users` — Users + plan distribution
-- `GET /api/admin/usage` — AI usage summary
+- `GET /api/admin/users`
+- `GET /api/admin/usage`
 
 ### Health
-- `GET /api/health` — Server + DB status
+- `GET /api/health`
 
-## Response Format
+## Pages
 
-```json
-{ "success": true, "data": {}, "error": null }
-```
-
-## Project Structure
-
-```
-/client          React frontend
-/server
-  /routes        Express route modules
-  /controllers   Request handlers
-  /middleware    auth, plan, admin guards
-  /services      ai.service.js (all AI calls)
-  /models        Database access
-/database
-  schema.sql     MySQL tables
-  seed.sql       Test users + job roles
-```
+| Route | Access |
+|-------|--------|
+| `/` | Public landing page |
+| `/register`, `/login` | Public |
+| `/dashboard` | Authenticated |
+| `/resume` | Authenticated |
+| `/analysis` | Student+ |
+| `/recommendations` | Student+ |
+| `/admin` | Admin only |
 
 ## Environment Variables
 
@@ -151,13 +204,11 @@ Password for all: `Password123!`
 
 | Variable | Description |
 |----------|-------------|
-| `CLAUDE_API_KEY` | Anthropic API key |
-| `OPENAI_API_KEY` | OpenAI key (if using openai provider) |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side key (bypasses RLS) |
 | `JWT_SECRET` | JWT signing secret |
-| `DB_HOST` | MySQL host |
-| `DB_USER` | MySQL user |
-| `DB_PASS` | MySQL password |
-| `DB_NAME` | Database name (muyai) |
+| `CLAUDE_API_KEY` | Anthropic API key |
+| `OPENAI_API_KEY` | Optional, if using `AI_PROVIDER=openai` |
 | `AI_PROVIDER` | `claude` or `openai` |
 | `AI_MODEL` | Model name |
 | `PORT` | Server port (5000) |
@@ -166,7 +217,34 @@ Password for all: `Password123!`
 
 | Variable | Description |
 |----------|-------------|
-| `VITE_API_URL` | API base URL (`http://localhost:5000/api`) |
+| `VITE_API_URL` | `http://localhost:5000/api` |
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| `Database connection failed` on `/api/health` | Check `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env` |
+| `relation "users" does not exist` | Run `database/schema.sql` in Supabase SQL Editor |
+| `Invalid API key` from Supabase | Use **service_role** key, not the `anon` key |
+| `CLAUDE_API_KEY is not configured` | Add key to `.env`, restart server |
+| Login fails for seed users | Run `database/seed.sql` in Supabase SQL Editor |
+| Duplicate job roles | Only run seed once, or delete rows from `job_roles` before re-seeding |
+
+## Project Structure
+
+```
+/client          React frontend
+/server
+  /config        Supabase client (db.js)
+  /routes        Express routes
+  /controllers   Request handlers
+  /middleware    auth, plan, admin guards
+  /services      ai.service.js
+  /models        Supabase data access
+/database
+  schema.sql     PostgreSQL schema for Supabase
+  seed.sql       Test users + job roles
+```
 
 ## Production Build
 
@@ -174,5 +252,3 @@ Password for all: `Password123!`
 cd client && npm run build
 cd server && npm start
 ```
-
-Serve `client/dist` via your preferred static host or proxy through Express.

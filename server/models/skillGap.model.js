@@ -1,50 +1,69 @@
-import pool from '../config/db.js';
+import supabase, { handleError } from '../config/db.js';
 
 const VALID_IMPORTANCE = new Set(['high', 'medium', 'low']);
+const IMPORTANCE_ORDER = { high: 0, medium: 1, low: 2 };
+
+function sortByImportance(gaps) {
+  return gaps.sort((a, b) => {
+    const diff = (IMPORTANCE_ORDER[a.importance_rank] ?? 1) - (IMPORTANCE_ORDER[b.importance_rank] ?? 1);
+    if (diff !== 0) return diff;
+    return a.missing_skill.localeCompare(b.missing_skill);
+  });
+}
 
 export async function deleteByResumeAndRole(resumeId, jobRoleId) {
-  await pool.query(
-    'DELETE FROM skill_gaps WHERE resume_id = ? AND job_role_id = ?',
-    [resumeId, jobRoleId]
-  );
+  const { error } = await supabase
+    .from('skill_gaps')
+    .delete()
+    .eq('resume_id', resumeId)
+    .eq('job_role_id', jobRoleId);
+
+  handleError(error, 'deleteByResumeAndRole');
 }
 
 export async function bulkInsert(resumeId, jobRoleId, gaps) {
   if (!gaps.length) return;
 
-  const values = gaps.map((gap) => [
-    resumeId,
-    jobRoleId,
-    gap.skill,
-    VALID_IMPORTANCE.has(gap.importance) ? gap.importance : 'medium',
-  ]);
+  const rows = gaps.map((gap) => ({
+    resume_id: resumeId,
+    job_role_id: jobRoleId,
+    missing_skill: gap.skill,
+    importance_rank: VALID_IMPORTANCE.has(gap.importance) ? gap.importance : 'medium',
+  }));
 
-  await pool.query(
-    'INSERT INTO skill_gaps (resume_id, job_role_id, missing_skill, importance_rank) VALUES ?',
-    [values]
-  );
+  const { error } = await supabase.from('skill_gaps').insert(rows);
+  handleError(error, 'bulkInsert skill gaps');
 }
 
 export async function findByResumeAndRole(resumeId, jobRoleId) {
-  const [rows] = await pool.query(
-    `SELECT id, missing_skill, importance_rank
-     FROM skill_gaps
-     WHERE resume_id = ? AND job_role_id = ?
-     ORDER BY FIELD(importance_rank, 'high', 'medium', 'low'), missing_skill`,
-    [resumeId, jobRoleId]
-  );
-  return rows;
+  const { data, error } = await supabase
+    .from('skill_gaps')
+    .select('id, missing_skill, importance_rank')
+    .eq('resume_id', resumeId)
+    .eq('job_role_id', jobRoleId);
+
+  handleError(error, 'findByResumeAndRole');
+  return sortByImportance(data || []);
 }
 
 export async function findByResumeId(resumeId) {
-  const [rows] = await pool.query(
-    `SELECT sg.id, sg.missing_skill, sg.importance_rank, sg.job_role_id,
-            jr.title AS job_role_title
-     FROM skill_gaps sg
-     JOIN job_roles jr ON jr.id = sg.job_role_id
-     WHERE sg.resume_id = ?
-     ORDER BY FIELD(sg.importance_rank, 'high', 'medium', 'low')`,
-    [resumeId]
-  );
-  return rows;
+  const { data, error } = await supabase
+    .from('skill_gaps')
+    .select('id, missing_skill, importance_rank, job_role_id, job_roles(title)')
+    .eq('resume_id', resumeId);
+
+  handleError(error, 'findByResumeId skill gaps');
+
+  const mapped = (data || []).map((row) => ({
+    id: row.id,
+    missing_skill: row.missing_skill,
+    importance_rank: row.importance_rank,
+    job_role_id: row.job_role_id,
+    job_role_title: row.job_roles?.title || null,
+  }));
+
+  return mapped.sort((a, b) => {
+    const diff = (IMPORTANCE_ORDER[a.importance_rank] ?? 1) - (IMPORTANCE_ORDER[b.importance_rank] ?? 1);
+    return diff;
+  });
 }

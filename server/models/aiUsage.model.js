@@ -1,46 +1,77 @@
-import pool from '../config/db.js';
+import supabase, { handleError } from '../config/db.js';
 
 export async function log({ userId, feature, provider, model, tokensUsed }) {
-  await pool.query(
-    'INSERT INTO ai_usage (user_id, feature, provider, model, tokens_used) VALUES (?, ?, ?, ?, ?)',
-    [userId, feature, provider, model, tokensUsed]
-  );
+  const { error } = await supabase.from('ai_usage').insert({
+    user_id: userId,
+    feature,
+    provider,
+    model,
+    tokens_used: tokensUsed,
+  });
+
+  handleError(error, 'log ai usage');
 }
 
 export async function getSummary() {
-  const [totals] = await pool.query(
-    `SELECT
-       COUNT(*) AS total_calls,
-       COALESCE(SUM(tokens_used), 0) AS total_tokens
-     FROM ai_usage`
-  );
+  const { data, error } = await supabase
+    .from('ai_usage')
+    .select('feature, provider, model, tokens_used');
 
-  const [byFeature] = await pool.query(
-    `SELECT feature, COUNT(*) AS calls, COALESCE(SUM(tokens_used), 0) AS tokens
-     FROM ai_usage GROUP BY feature ORDER BY tokens DESC`
-  );
+  handleError(error, 'getSummary ai usage');
 
-  const [byProvider] = await pool.query(
-    `SELECT provider, model, COUNT(*) AS calls, COALESCE(SUM(tokens_used), 0) AS tokens
-     FROM ai_usage GROUP BY provider, model ORDER BY tokens DESC`
-  );
+  const rows = data || [];
+
+  const totals = {
+    total_calls: rows.length,
+    total_tokens: rows.reduce((sum, row) => sum + (row.tokens_used || 0), 0),
+  };
+
+  const byFeatureMap = new Map();
+  rows.forEach((row) => {
+    const existing = byFeatureMap.get(row.feature) || { feature: row.feature, calls: 0, tokens: 0 };
+    existing.calls += 1;
+    existing.tokens += row.tokens_used || 0;
+    byFeatureMap.set(row.feature, existing);
+  });
+
+  const byProviderMap = new Map();
+  rows.forEach((row) => {
+    const key = `${row.provider}|${row.model}`;
+    const existing = byProviderMap.get(key) || {
+      provider: row.provider,
+      model: row.model,
+      calls: 0,
+      tokens: 0,
+    };
+    existing.calls += 1;
+    existing.tokens += row.tokens_used || 0;
+    byProviderMap.set(key, existing);
+  });
 
   return {
-    totals: totals[0],
-    by_feature: byFeature,
-    by_provider: byProvider,
+    totals,
+    by_feature: Array.from(byFeatureMap.values()).sort((a, b) => b.tokens - a.tokens),
+    by_provider: Array.from(byProviderMap.values()).sort((a, b) => b.tokens - a.tokens),
   };
 }
 
 export async function getRecent(limit = 20) {
-  const [rows] = await pool.query(
-    `SELECT a.id, a.feature, a.provider, a.model, a.tokens_used, a.created_at,
-            u.name AS user_name, u.email AS user_email
-     FROM ai_usage a
-     JOIN users u ON u.id = a.user_id
-     ORDER BY a.created_at DESC
-     LIMIT ?`,
-    [limit]
-  );
-  return rows;
+  const { data, error } = await supabase
+    .from('ai_usage')
+    .select('id, feature, provider, model, tokens_used, created_at, users(name, email)')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  handleError(error, 'getRecent ai usage');
+
+  return (data || []).map((row) => ({
+    id: row.id,
+    feature: row.feature,
+    provider: row.provider,
+    model: row.model,
+    tokens_used: row.tokens_used,
+    created_at: row.created_at,
+    user_name: row.users?.name || 'Unknown',
+    user_email: row.users?.email || '',
+  }));
 }
