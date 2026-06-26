@@ -32,7 +32,7 @@ export default function UpgradeBanner({ requiredPlan = 'student' }) {
             View plans
           </Link>
           <Link
-            to="/dashboard"
+            to="/apps/dashboard"
             className="rounded-full border border-white/40 px-6 py-3 text-sm font-semibold hover:bg-white/10"
           >
             Back to dashboard

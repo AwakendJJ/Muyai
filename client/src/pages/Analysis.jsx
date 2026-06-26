@@ -1,17 +1,25 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import * as analysisApi from '../api/analysis.js';
 import * as resumesApi from '../api/resumes.js';
-import AppLayout from '../components/layout/AppLayout.jsx';
+import AppShell from '../components/layout/AppShell.jsx';
+import PageHeader from '../components/layout/PageHeader.jsx';
 import GapBarChart from '../components/charts/GapBarChart.jsx';
-import LoadingSpinner from '../components/LoadingSpinner.jsx';
+import ErrorBanner from '../components/ErrorBanner.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 import PlanGate from '../components/PlanGate.jsx';
+import { Button } from '../components/ui/button.jsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.jsx';
+import { Skeleton } from '../components/ui/skeleton.jsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs.jsx';
+import { Badge } from '../components/ui/badge.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
-const IMPORTANCE_STYLES = {
-  high: 'bg-pink/10 text-pink',
-  medium: 'bg-orange/10 text-orange',
-  low: 'bg-blue/10 text-blue',
+const IMPORTANCE_VARIANT = {
+  high: 'free',
+  medium: 'warning',
+  low: 'student',
 };
 
 export default function Analysis() {
@@ -47,9 +55,7 @@ export default function Analysis() {
         const list = resumesRes.data.resumes;
         setResumes(list);
         setJobRoles(rolesRes.data.job_roles);
-        if (list.length > 0) {
-          setSelectedResumeId(list[0].id);
-        }
+        if (list.length > 0) setSelectedResumeId(list[0].id);
         if (rolesRes.data.job_roles.length > 0) {
           setSelectedRoleId(String(rolesRes.data.job_roles[0].id));
         }
@@ -66,10 +72,8 @@ export default function Analysis() {
 
   async function handleAnalyze() {
     if (!selectedResumeId || !selectedRoleId) return;
-
     setError('');
     setAnalyzing(true);
-
     try {
       const response = await analysisApi.runGapAnalysis(
         token,
@@ -87,117 +91,135 @@ export default function Analysis() {
 
   if (loading) {
     return (
-      <AppLayout>
-        <LoadingSpinner />
-      </AppLayout>
+      <AppShell>
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="mt-8 h-32" />
+      </AppShell>
     );
   }
 
   return (
-    <AppLayout>
+    <AppShell>
       <PlanGate minimumPlan="student">
-        <h1 className="text-3xl font-bold">Gap Analysis</h1>
-        <p className="mt-2 text-gray-text">
-          Compare your skills against a target role and find what to learn next
-        </p>
+        <PageHeader
+          title="Gap Analysis"
+          description="Compare your skills against a target role and find what to learn next"
+        />
 
-        {error && (
-          <div className="mt-6 rounded-xl bg-pink/10 px-4 py-3 text-sm text-pink">{error}</div>
-        )}
+        {error && <ErrorBanner message={error} className="mt-6" />}
 
         {resumes.length === 0 ? (
-          <div className="mt-8 card-rounded p-8 text-center">
-            <p className="text-gray-text">Upload a resume first to run gap analysis.</p>
-            <Link to="/resume" className="btn-pill-purple mt-4 inline-flex">
-              Upload resume
-            </Link>
-          </div>
+          <EmptyState
+            icon={Search}
+            title="No resume uploaded"
+            description="Upload a resume first to run gap analysis."
+            actionLabel="Upload resume"
+            actionTo="/apps/resume"
+            className="mt-8"
+          />
         ) : (
           <>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="resume" className="block text-sm font-medium">Resume</label>
-                <select
-                  id="resume"
-                  value={selectedResumeId || ''}
-                  onChange={(e) => setSelectedResumeId(Number(e.target.value))}
-                  className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-purple"
-                >
-                  {resumes.map((r) => (
-                    <option key={r.id} value={r.id}>{r.filename}</option>
-                  ))}
-                </select>
-              </div>
+            <Card className="mt-8">
+              <CardContent className="grid gap-4 p-6 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="resume" className="block text-sm font-medium">Resume</label>
+                  <select
+                    id="resume"
+                    value={selectedResumeId || ''}
+                    onChange={(e) => setSelectedResumeId(Number(e.target.value))}
+                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-purple"
+                  >
+                    {resumes.map((r) => (
+                      <option key={r.id} value={r.id}>{r.filename}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="role" className="block text-sm font-medium">Target role</label>
+                  <select
+                    id="role"
+                    value={selectedRoleId}
+                    onChange={(e) => setSelectedRoleId(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-purple"
+                  >
+                    {jobRoles.map((role) => (
+                      <option key={role.id} value={role.id}>{role.title}</option>
+                    ))}
+                  </select>
+                </div>
+              </CardContent>
+            </Card>
 
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium">Target role</label>
-                <select
-                  id="role"
-                  value={selectedRoleId}
-                  onChange={(e) => setSelectedRoleId(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-purple"
-                >
-                  {jobRoles.map((role) => (
-                    <option key={role.id} value={role.id}>{role.title}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <button
-              type="button"
+            <Button
+              variant="purple"
+              className="mt-6"
               onClick={handleAnalyze}
               disabled={analyzing}
-              className="btn-pill-purple mt-6 disabled:opacity-60"
             >
               {analyzing ? 'Analyzing...' : 'Run gap analysis'}
-            </button>
+            </Button>
 
             {gaps.length > 0 && (
-              <div className="mt-10 grid gap-6 lg:grid-cols-2">
-                <div className="card-rounded p-6">
-                  <h3 className="font-bold">Gap importance breakdown</h3>
-                  <div className="mt-4">
-                    <GapBarChart gaps={gaps} />
-                  </div>
-                </div>
+              <Tabs defaultValue="chart" className="mt-10">
+                <TabsList>
+                  <TabsTrigger value="chart">Chart</TabsTrigger>
+                  <TabsTrigger value="list">Skill gaps</TabsTrigger>
+                </TabsList>
 
-                <div className="card-rounded p-6">
-                  <h3 className="font-bold">
-                    Missing skills{jobRole ? ` for ${jobRole.title}` : ''}
-                  </h3>
-                  <ul className="mt-4 space-y-3">
-                    {gaps.map((gap) => (
-                      <li
-                        key={gap.missing_skill || gap.skill}
-                        className="rounded-xl border border-gray-100 p-4"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium">{gap.missing_skill || gap.skill}</span>
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${IMPORTANCE_STYLES[gap.importance_rank || gap.importance]}`}>
-                            {gap.importance_rank || gap.importance}
-                          </span>
-                        </div>
-                        {gap.reason && (
-                          <p className="mt-2 text-sm text-gray-text">{gap.reason}</p>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+                <TabsContent value="chart">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Gap importance breakdown</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <GapBarChart gaps={gaps} />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="list">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>
+                        Missing skills{jobRole ? ` for ${jobRole.title}` : ''}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {gaps.map((gap) => {
+                        const rank = gap.importance_rank || gap.importance;
+                        return (
+                          <div
+                            key={gap.missing_skill || gap.skill}
+                            className="rounded-xl border border-gray-100 p-4"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-medium">{gap.missing_skill || gap.skill}</span>
+                              <Badge variant={IMPORTANCE_VARIANT[rank] || 'default'} className="capitalize">
+                                {rank}
+                              </Badge>
+                            </div>
+                            {gap.reason && (
+                              <p className="mt-2 text-sm text-gray-text">{gap.reason}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
             )}
 
             {gaps.length > 0 && (
               <div className="mt-8 text-center">
-                <Link to="/recommendations" className="btn-pill-dark inline-flex">
-                  View recommendations
-                </Link>
+                <Button variant="default" asChild>
+                  <Link to="/apps/recommendations">View recommendations</Link>
+                </Button>
               </div>
             )}
           </>
         )}
       </PlanGate>
-    </AppLayout>
+    </AppShell>
   );
 }

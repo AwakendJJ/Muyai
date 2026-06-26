@@ -1,11 +1,16 @@
 import * as userModel from '../models/user.model.js';
 import * as resumeModel from '../models/resume.model.js';
+import { PLAN_GATING_ENABLED } from '../config/plan.js';
 
 const PLAN_RANK = { free: 0, student: 1, pro: 2 };
 const FREE_SCAN_LIMIT = 2;
 
 export function requirePlan(minimumPlan) {
   return async (req, res, next) => {
+    if (!PLAN_GATING_ENABLED) {
+      return next();
+    }
+
     try {
       const user = await userModel.findById(req.user.id);
 
@@ -40,6 +45,10 @@ export function requirePlan(minimumPlan) {
 }
 
 export async function checkScanLimit(req, res, next) {
+  if (!PLAN_GATING_ENABLED) {
+    return next();
+  }
+
   try {
     const user = await userModel.findById(req.user.id);
 

@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FileText, Upload } from 'lucide-react';
 import * as resumesApi from '../api/resumes.js';
-import AppLayout from '../components/layout/AppLayout.jsx';
-import LoadingSpinner from '../components/LoadingSpinner.jsx';
+import AppShell from '../components/layout/AppShell.jsx';
+import PageHeader from '../components/layout/PageHeader.jsx';
+import ErrorBanner from '../components/ErrorBanner.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 import SkillTable from '../components/SkillTable.jsx';
+import { Badge } from '../components/ui/badge.jsx';
+import { Button } from '../components/ui/button.jsx';
+import { Card, CardContent } from '../components/ui/card.jsx';
+import { Skeleton } from '../components/ui/skeleton.jsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Resume() {
@@ -37,9 +45,7 @@ export default function Resume() {
   useEffect(() => {
     loadResumes()
       .then((list) => {
-        if (list.length > 0) {
-          return loadSkills(list[0].id);
-        }
+        if (list.length > 0) return loadSkills(list[0].id);
         return null;
       })
       .catch((err) => setError(err.message))
@@ -81,109 +87,123 @@ export default function Resume() {
 
   if (loading) {
     return (
-      <AppLayout>
-        <LoadingSpinner />
-      </AppLayout>
+      <AppShell>
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="mt-8 h-48" />
+      </AppShell>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Resume</h1>
-          <p className="mt-1 text-gray-text">Upload your resume and view extracted skills</p>
-        </div>
+    <AppShell>
+      <PageHeader
+        title="Resume Lab"
+        description="Upload your resume and view extracted skills"
+      >
         {scanLimit !== null && (
-          <div className="pill-tag text-xs">
-            {scanCount}/{scanLimit} scans used
-          </div>
+          <Badge variant="student">{scanCount}/{scanLimit} scans</Badge>
         )}
-      </div>
+      </PageHeader>
 
-      {error && (
-        <div className="mt-6 rounded-xl bg-pink/10 px-4 py-3 text-sm text-pink">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} className="mt-6" />}
 
       {atScanLimit ? (
-        <div className="mt-8 card-rounded border-2 border-purple/20 bg-purple/5 p-8 text-center">
-          <h2 className="text-xl font-bold">Scan limit reached</h2>
-          <p className="mt-2 text-gray-text">
-            Free plan includes {scanLimit} resume scans. Upgrade to student for unlimited scans and gap analysis.
-          </p>
-          <Link to="/dashboard" className="btn-pill-purple mt-6 inline-flex">
-            View upgrade options
-          </Link>
-        </div>
+        <Card className="mt-8 border-2 border-purple/20 bg-purple/5 p-8 text-center">
+          <CardContent className="p-0">
+            <h2 className="text-xl font-bold">Scan limit reached</h2>
+            <p className="mt-2 text-gray-text">
+              Free plan includes {scanLimit} resume scans. Upgrade to student for unlimited scans.
+            </p>
+            <Button variant="purple" className="mt-6" asChild>
+              <Link to="/apps/dashboard">View upgrade options</Link>
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
-        <div
+        <Card
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
-          className={`mt-8 card-rounded border-2 border-dashed p-12 text-center transition-colors ${
+          className={`mt-8 border-2 border-dashed p-12 text-center transition-colors ${
             dragOver ? 'border-purple bg-purple/5' : 'border-gray-200'
           }`}
         >
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue/10 text-2xl">
-            📄
-          </div>
-          <h2 className="mt-4 text-lg font-bold">Drop your resume here</h2>
-          <p className="mt-2 text-sm text-gray-text">PDF only, max 5MB</p>
-          <label className="btn-pill-dark mt-6 inline-flex cursor-pointer">
-            {uploading ? 'Analyzing...' : 'Choose PDF'}
-            <input
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              disabled={uploading}
-              onChange={onFileChange}
-            />
-          </label>
-        </div>
+          <CardContent className="p-0">
+            {uploading ? (
+              <div className="space-y-4">
+                <Skeleton className="mx-auto h-16 w-16 rounded-2xl" />
+                <Skeleton className="mx-auto h-6 w-48" />
+                <p className="text-sm text-gray-text">Analyzing your resume...</p>
+              </div>
+            ) : (
+              <>
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue/10">
+                  <Upload className="h-8 w-8 text-blue" />
+                </div>
+                <h2 className="mt-4 text-lg font-bold">Drop your resume here</h2>
+                <p className="mt-2 text-sm text-gray-text">PDF only, max 5MB</p>
+                <label>
+                  <Button variant="default" className="mt-6 cursor-pointer" asChild>
+                    <span>
+                      Choose PDF
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        className="hidden"
+                        disabled={uploading}
+                        onChange={onFileChange}
+                      />
+                    </span>
+                  </Button>
+                </label>
+              </>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {resumes.length > 0 && (
         <div className="mt-10">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-xl font-bold">Your resumes</h2>
-            <div className="flex flex-wrap gap-2">
+          <Tabs
+            value={String(selectedResume?.id || resumes[0]?.id)}
+            onValueChange={(val) => loadSkills(Number(val))}
+          >
+            <TabsList className="flex-wrap h-auto gap-1">
               {resumes.map((resume) => (
-                <button
-                  key={resume.id}
-                  type="button"
-                  onClick={() => loadSkills(resume.id)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                    selectedResume?.id === resume.id
-                      ? 'bg-purple text-white'
-                      : 'bg-white text-dark border border-gray-200 hover:border-purple'
-                  }`}
-                >
+                <TabsTrigger key={resume.id} value={String(resume.id)} className="text-xs">
                   {resume.filename}
-                </button>
+                </TabsTrigger>
               ))}
-            </div>
-          </div>
+            </TabsList>
 
-          {selectedResume && (
-            <div className="mt-6">
-              <p className="text-sm text-gray-text">
-                {selectedResume.filename} · {skills.length} skills extracted
-              </p>
-              <div className="mt-4">
-                <SkillTable skills={skills} />
-              </div>
-            </div>
-          )}
+            {resumes.map((resume) => (
+              <TabsContent key={resume.id} value={String(resume.id)}>
+                <p className="text-sm text-gray-text">
+                  {resume.filename} · {skills.length} skills extracted
+                </p>
+                <div className="mt-4">
+                  <SkillTable skills={skills} />
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
         </div>
       )}
 
-      {user?.plan === 'free' && !atScanLimit && (
+      {resumes.length === 0 && !atScanLimit && (
+        <EmptyState
+          icon={FileText}
+          title="No resumes yet"
+          description="Upload your first PDF resume to extract skills with AI."
+          className="mt-8"
+        />
+      )}
+
+      {user?.plan === 'free' && !atScanLimit && scanLimit !== null && (
         <p className="mt-6 text-center text-sm text-gray-text">
           {scanLimit - scanCount} scan{scanLimit - scanCount !== 1 ? 's' : ''} remaining on free plan
         </p>
       )}
-    </AppLayout>
+    </AppShell>
   );
 }

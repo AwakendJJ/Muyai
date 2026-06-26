@@ -1,6 +1,7 @@
-import jwt from 'jsonwebtoken';
+import { verifyIdToken } from '../config/firebase.js';
+import * as userModel from '../models/user.model.js';
 
-export function authenticate(req, res, next) {
+export async function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith('Bearer ')) {
@@ -14,10 +15,21 @@ export function authenticate(req, res, next) {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { id: decoded.id, email: decoded.email };
+    const decoded = await verifyIdToken(token);
+    const user = await userModel.findByFirebaseUid(decoded.uid);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        data: null,
+        error: 'User not found — please sign in again',
+      });
+    }
+
+    req.user = { id: user.id, email: user.email, uid: decoded.uid };
     next();
-  } catch {
+  } catch (error) {
+    console.error('Auth error:', error.message);
     return res.status(401).json({
       success: false,
       data: null,

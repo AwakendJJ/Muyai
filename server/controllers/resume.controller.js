@@ -1,6 +1,7 @@
 import * as resumeModel from '../models/resume.model.js';
 import * as skillModel from '../models/skill.model.js';
 import * as userModel from '../models/user.model.js';
+import { PLAN_GATING_ENABLED } from '../config/plan.js';
 import { extractPdfText, parseResumeText } from '../services/ai.service.js';
 
 const FREE_SCAN_LIMIT = 2;
@@ -16,7 +17,7 @@ export async function listResumes(req, res) {
       data: {
         resumes,
         scan_count: scanCount,
-        scan_limit: user.plan === 'free' ? FREE_SCAN_LIMIT : null,
+        scan_limit: PLAN_GATING_ENABLED && user.plan === 'free' ? FREE_SCAN_LIMIT : null,
         plan: user.plan,
       },
       error: null,

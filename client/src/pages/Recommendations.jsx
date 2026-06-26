@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ExternalLink, Target } from 'lucide-react';
 import * as recommendationsApi from '../api/recommendations.js';
 import * as resumesApi from '../api/resumes.js';
-import AppLayout from '../components/layout/AppLayout.jsx';
-import LoadingSpinner from '../components/LoadingSpinner.jsx';
+import AppShell from '../components/layout/AppShell.jsx';
+import PageHeader from '../components/layout/PageHeader.jsx';
+import ErrorBanner from '../components/ErrorBanner.jsx';
+import EmptyState from '../components/EmptyState.jsx';
 import PlanGate from '../components/PlanGate.jsx';
+import { Button } from '../components/ui/button.jsx';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.jsx';
+import { Skeleton } from '../components/ui/skeleton.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Recommendations() {
@@ -71,52 +77,49 @@ export default function Recommendations() {
 
   if (loading && !selectedResumeId) {
     return (
-      <AppLayout>
-        <LoadingSpinner />
-      </AppLayout>
+      <AppShell>
+        <Skeleton className="h-10 w-56" />
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <Skeleton className="h-40" />
+          <Skeleton className="h-40" />
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <AppLayout>
+    <AppShell>
       <PlanGate minimumPlan="student">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Recommendations</h1>
-            <p className="mt-2 text-gray-text">
-              Career paths and courses tailored to your skill gaps
-            </p>
-          </div>
+        <PageHeader
+          title="Recommendations"
+          description="Career paths and courses tailored to your skill gaps"
+        >
           {selectedResumeId && (
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="btn-pill border border-dark/20 bg-white text-dark disabled:opacity-60"
-            >
+            <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
               {refreshing ? 'Refreshing...' : 'Refresh'}
-            </button>
+            </Button>
           )}
-        </div>
+        </PageHeader>
 
         {error && (
-          <div className="mt-6 rounded-xl bg-pink/10 px-4 py-3 text-sm text-pink">
-            {error}
+          <ErrorBanner message={error} className="mt-6">
             {error.includes('gap analysis') && (
-              <Link to="/analysis" className="ml-2 font-semibold underline">
+              <Link to="/apps/analysis" className="ml-2 font-semibold underline">
                 Run gap analysis
               </Link>
             )}
-          </div>
+          </ErrorBanner>
         )}
 
         {resumes.length === 0 ? (
-          <div className="mt-8 card-rounded p-8 text-center">
-            <p className="text-gray-text">Upload a resume and run gap analysis first.</p>
-            <Link to="/resume" className="btn-pill-purple mt-4 inline-flex">
-              Get started
-            </Link>
-          </div>
+          <EmptyState
+            icon={Target}
+            title="Get started"
+            description="Upload a resume and run gap analysis first."
+            actionLabel="Upload resume"
+            actionTo="/apps/resume"
+            className="mt-8"
+          />
         ) : (
           <>
             <div className="mt-6 max-w-sm">
@@ -134,7 +137,10 @@ export default function Recommendations() {
             </div>
 
             {loading ? (
-              <LoadingSpinner className="py-16" />
+              <div className="mt-10 grid gap-4 sm:grid-cols-2">
+                <Skeleton className="h-40" />
+                <Skeleton className="h-40" />
+              </div>
             ) : (
               <div className="mt-10 space-y-12">
                 <section>
@@ -144,10 +150,14 @@ export default function Recommendations() {
                   ) : (
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       {careerPaths.map((career) => (
-                        <div key={career.id || career.title} className="rounded-2xl bg-purple p-6 text-white">
-                          <h3 className="text-lg font-bold">{career.title}</h3>
-                          <p className="mt-2 text-sm opacity-90">{career.description}</p>
-                        </div>
+                        <Card key={career.id || career.title} className="bg-purple text-white border-0">
+                          <CardHeader>
+                            <CardTitle className="text-white">{career.title}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <p className="text-sm opacity-90">{career.description}</p>
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   )}
@@ -160,20 +170,25 @@ export default function Recommendations() {
                   ) : (
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       {courses.map((course) => (
-                        <div key={course.id || course.title} className="card-rounded p-6">
-                          <h3 className="font-bold">{course.title}</h3>
-                          <p className="mt-2 text-sm text-gray-text">{course.description}</p>
-                          {course.url && (
-                            <a
-                              href={course.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-4 inline-flex text-sm font-semibold text-blue hover:underline"
-                            >
-                              View course →
-                            </a>
-                          )}
-                        </div>
+                        <Card key={course.id || course.title}>
+                          <CardHeader>
+                            <CardTitle className="text-base">{course.title}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <p className="text-sm text-gray-text">{course.description}</p>
+                            {course.url && (
+                              <a
+                                href={course.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue hover:underline"
+                              >
+                                View course
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </a>
+                            )}
+                          </CardContent>
+                        </Card>
                       ))}
                     </div>
                   )}
@@ -183,6 +198,6 @@ export default function Recommendations() {
           </>
         )}
       </PlanGate>
-    </AppLayout>
+    </AppShell>
   );
 }

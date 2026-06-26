@@ -17,7 +17,7 @@ UI follows the [Tokko](https://tokko.framer.website/) visual language — vibran
 
 - Node.js 18+
 - A [Supabase](https://supabase.com) project (free tier works)
-- Claude API key (for resume upload / AI features)
+- AI API key: Claude, OpenAI, or [DeepSeek](https://platform.deepseek.com) (for resume upload / AI features)
 
 ---
 
@@ -73,7 +73,9 @@ Edit `server/.env`:
 SUPABASE_URL=https://xxxxxxxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
 JWT_SECRET=any-long-random-string
-CLAUDE_API_KEY=sk-ant-...
+DEEPSEEK_API_KEY=sk-...       # if using DeepSeek
+AI_PROVIDER=deepseek
+AI_MODEL=deepseek-chat
 PORT=5000
 ```
 
@@ -207,10 +209,11 @@ Password for all: `Password123!`
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side key (bypasses RLS) |
 | `JWT_SECRET` | JWT signing secret |
-| `CLAUDE_API_KEY` | Anthropic API key |
-| `OPENAI_API_KEY` | Optional, if using `AI_PROVIDER=openai` |
-| `AI_PROVIDER` | `claude` or `openai` |
-| `AI_MODEL` | Model name |
+| `CLAUDE_API_KEY` | Anthropic API key (if `AI_PROVIDER=claude`) |
+| `OPENAI_API_KEY` | OpenAI key (if `AI_PROVIDER=openai`) |
+| `DEEPSEEK_API_KEY` | DeepSeek key (if `AI_PROVIDER=deepseek`) |
+| `AI_PROVIDER` | `claude`, `openai`, or `deepseek` |
+| `AI_MODEL` | e.g. `deepseek-chat`, `claude-sonnet-4-20250514`, `gpt-4o` |
 | `PORT` | Server port (5000) |
 
 **Client** (`client/.env`):
@@ -226,7 +229,8 @@ Password for all: `Password123!`
 | `Database connection failed` on `/api/health` | Check `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env` |
 | `relation "users" does not exist` | Run `database/schema.sql` in Supabase SQL Editor |
 | `Invalid API key` from Supabase | Use **service_role** key, not the `anon` key |
-| `CLAUDE_API_KEY is not configured` | Add key to `.env`, restart server |
+| `CLAUDE_API_KEY is not configured` | Set `AI_PROVIDER=deepseek` + `DEEPSEEK_API_KEY`, or add Claude key |
+| `DEEPSEEK_API_KEY is not configured` | Add DeepSeek key to `.env`, restart server |
 | Login fails for seed users | Run `database/seed.sql` in Supabase SQL Editor |
 | Duplicate job roles | Only run seed once, or delete rows from `job_roles` before re-seeding |
 

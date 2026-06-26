@@ -3,10 +3,16 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
 import { testConnection } from './config/db.js';
+import { initFirebaseAdmin } from './config/firebase.js';
 import authRoutes from './routes/auth.routes.js';
 import resumeRoutes from './routes/resume.routes.js';
 import analysisRoutes from './routes/analysis.routes.js';
 import recommendationRoutes from './routes/recommendation.routes.js';
+import jobsRoutes from './routes/jobs.routes.js';
+import applicationsRoutes from './routes/applications.routes.js';
+import coverLettersRoutes from './routes/coverLetters.routes.js';
+import interviewRoutes from './routes/interview.routes.js';
+import coachRoutes from './routes/coach.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 
 dotenv.config();
@@ -21,6 +27,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/jobs', jobsRoutes);
+app.use('/api/applications', applicationsRoutes);
+app.use('/api/cover-letters', coverLettersRoutes);
+app.use('/api/interview', interviewRoutes);
+app.use('/api/coach', coachRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', async (req, res) => {
@@ -67,6 +78,8 @@ app.use((err, req, res, next) => {
 });
 
 async function start() {
+  initFirebaseAdmin();
+
   try {
     await testConnection();
     console.log('Database connected');

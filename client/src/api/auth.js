@@ -1,16 +1,10 @@
 import { apiRequest } from './client.js';
 
-export function register(name, email, password) {
-  return apiRequest('/auth/register', {
+export function syncUser(token, body = {}) {
+  return apiRequest('/auth/sync', {
     method: 'POST',
-    body: { name, email, password },
-  });
-}
-
-export function login(email, password) {
-  return apiRequest('/auth/login', {
-    method: 'POST',
-    body: { email, password },
+    token,
+    body,
   });
 }
 

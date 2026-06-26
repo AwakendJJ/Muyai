@@ -1,5 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const FEATURES = [
   { color: 'bg-pink', tag: 'Resume scan', title: 'Skills that shine', desc: 'AI extracts and categorizes your skills from any resume in seconds.' },
@@ -25,7 +31,7 @@ const TESTIMONIALS = [
 const FAQS = [
   { q: 'Is Muyai free to use?', a: 'Yes. The free plan includes 2 resume scans and a basic skill report. Upgrade to Student for unlimited scans, gap analysis, and recommendations.' },
   { q: 'What file formats are supported?', a: 'Currently PDF resumes only, up to 5MB. Ensure your resume has selectable text for best results.' },
-  { q: 'Which AI provider does Muyai use?', a: 'Muyai supports Claude (default) and OpenAI-compatible APIs. All AI calls are server-side — your API keys are never exposed.' },
+  { q: 'Which AI provider does Muyai use?', a: 'Muyai supports Claude, OpenAI, and DeepSeek APIs. All AI calls are server-side — your API keys are never exposed.' },
   { q: 'Who is Muyai built for?', a: 'African students and early-career professionals who want AI-powered guidance to identify skills, close gaps, and plan their career.' },
 ];
 
@@ -45,10 +51,48 @@ function CheckIcon() {
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(null);
+  const heroRef = useRef(null);
+  const featuresRef = useRef(null);
+  const stepsRef = useRef(null);
+
+  useGSAP(() => {
+    const cards = heroRef.current?.querySelectorAll('.hero-card');
+    if (cards?.length) {
+      gsap.fromTo(
+        cards,
+        { y: 80, opacity: 0, rotate: (i) => (i === 0 ? -12 : i === 2 ? 12 : 0) },
+        {
+          y: 0,
+          opacity: 1,
+          rotate: (i) => (i === 0 ? -10 : i === 2 ? 10 : 0),
+          duration: 1,
+          stagger: 0.15,
+          ease: 'power3.out',
+        }
+      );
+    }
+
+    gsap.utils.toArray('.reveal-section').forEach((section) => {
+      gsap.fromTo(
+        section,
+        { y: 60, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.8,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 85%',
+            toggleActions: 'play none none none',
+          },
+        }
+      );
+    });
+  }, { scope: heroRef });
 
   return (
     <div className="min-h-svh bg-surface">
-      {/* Header */}
       <header className="sticky top-0 z-40 border-b border-gray-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link to="/" className="text-xl font-bold tracking-tight">Muyai</Link>
@@ -68,52 +112,71 @@ export default function Home() {
       </header>
 
       <main>
-        {/* Hero */}
         <section className="mx-auto max-w-6xl px-6 py-16 text-center md:py-28">
-          <h1 className="text-5xl font-bold tracking-tight md:text-7xl lg:text-8xl">
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-5xl font-bold tracking-tight md:text-7xl lg:text-8xl"
+          >
             Elevate your career with AI
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-text md:text-xl">
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="mx-auto mt-6 max-w-2xl text-lg text-gray-text md:text-xl"
+          >
             Upload your resume, discover your skills, identify gaps, and get personalized
             career and course recommendations built for African talent.
-          </p>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mt-10 flex flex-wrap items-center justify-center gap-4"
+          >
             <Link to="/register" className="btn-pill-dark px-8 py-4 text-base">Get Started Free</Link>
             <a href="#features" className="btn-pill border border-dark/20 bg-white px-8 py-4 text-base text-dark hover:bg-muted">
               See Features
             </a>
-          </div>
+          </motion.div>
 
-          <div className="relative mx-auto mt-20 flex h-72 max-w-xl items-center justify-center">
-            <div className="absolute left-4 top-10 h-52 w-40 rotate-[-10deg] rounded-3xl bg-gradient-to-br from-pink to-pink/70 shadow-2xl" />
-            <div className="absolute z-10 flex h-60 w-44 items-center justify-center rounded-3xl bg-gradient-to-br from-purple to-purple/80 shadow-2xl">
+          <div ref={heroRef} className="relative mx-auto mt-20 flex h-72 max-w-xl items-center justify-center">
+            <div className="hero-card absolute left-4 top-10 h-52 w-40 rotate-[-10deg] rounded-3xl bg-gradient-to-br from-pink to-pink/70 shadow-2xl" />
+            <div className="hero-card absolute z-10 flex h-60 w-44 items-center justify-center rounded-3xl bg-gradient-to-br from-purple to-purple/80 shadow-2xl">
               <span className="text-6xl">🚀</span>
             </div>
-            <div className="absolute right-4 top-6 h-52 w-40 rotate-[10deg] rounded-3xl bg-gradient-to-br from-blue to-blue/70 shadow-2xl" />
+            <div className="hero-card absolute right-4 top-6 h-52 w-40 rotate-[10deg] rounded-3xl bg-gradient-to-br from-blue to-blue/70 shadow-2xl" />
           </div>
         </section>
 
-        {/* Features grid */}
-        <section id="features" className="bg-muted py-20 md:py-28">
+        <section id="features" ref={featuresRef} className="reveal-section bg-muted py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-6">
             <h2 className="text-center text-3xl font-bold md:text-5xl">You&apos;ll love Muyai</h2>
             <p className="mx-auto mt-4 max-w-xl text-center text-gray-text">
               Everything you need to understand your skills and plan your next move.
             </p>
             <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map((card) => (
-                <div key={card.title} className={`${card.color} rounded-3xl p-8 text-white transition-transform hover:scale-[1.02]`}>
+              {FEATURES.map((card, i) => (
+                <motion.div
+                  key={card.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                  className={`${card.color} rounded-3xl p-8 text-white transition-transform hover:scale-[1.02]`}
+                >
                   <span className="text-xs font-semibold uppercase tracking-wider opacity-80">{card.tag}</span>
                   <h3 className="mt-4 text-xl font-bold">{card.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed opacity-90">{card.desc}</p>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Pill tags */}
-        <section className="py-20">
+        <section className="reveal-section py-20">
           <div className="mx-auto max-w-6xl px-6 text-center">
             <h2 className="text-3xl font-bold md:text-4xl">Built for your career journey</h2>
             <div className="mt-10 flex flex-wrap justify-center gap-3">
@@ -127,8 +190,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* How it works — curriculum cards */}
-        <section id="how-it-works" className="bg-muted py-20 md:py-28">
+        <section id="how-it-works" ref={stepsRef} className="reveal-section bg-muted py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-6">
             <h2 className="text-center text-3xl font-bold md:text-5xl">How it works</h2>
             <p className="mx-auto mt-4 max-w-xl text-center text-gray-text">
@@ -157,8 +219,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Testimonials */}
-        <section className="py-20 md:py-28">
+        <section className="reveal-section py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-6">
             <h2 className="text-center text-3xl font-bold md:text-4xl">Real stories from talent</h2>
             <div className="mt-12 grid gap-6 md:grid-cols-3">
@@ -173,8 +234,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Pricing */}
-        <section id="pricing" className="bg-muted py-20 md:py-28">
+        <section id="pricing" className="reveal-section bg-muted py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-6">
             <h2 className="text-center text-3xl font-bold md:text-5xl">Choose your plan</h2>
             <p className="mx-auto mt-4 max-w-xl text-center text-gray-text">
@@ -213,8 +273,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* FAQ */}
-        <section id="faq" className="py-20 md:py-28">
+        <section id="faq" className="reveal-section py-20 md:py-28">
           <div className="mx-auto max-w-2xl px-6">
             <h2 className="text-center text-3xl font-bold md:text-4xl">Let&apos;s clear a few things up</h2>
             <div className="mt-12 divide-y divide-gray-100">
@@ -237,8 +296,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="bg-dark py-20 text-white md:py-28">
+        <section className="reveal-section bg-dark py-20 text-white md:py-28">
           <div className="mx-auto max-w-6xl px-6 text-center">
             <h2 className="text-3xl font-bold md:text-5xl">Plan better. Grow smarter.</h2>
             <p className="mx-auto mt-4 max-w-xl text-white/70">
@@ -251,7 +309,6 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-gray-100 py-12">
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
