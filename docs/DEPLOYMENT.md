@@ -53,12 +53,22 @@ FRONTEND_URL=           # set after Vercel deploy, e.g. https://muyai.vercel.app
 1. Go to [vercel.com](https://vercel.com) → **Add New Project** → import **AwakendJJ/Muyai**
 2. Settings:
 
+### Option A — Root Directory = `client` (recommended)
+
 | Setting | Value |
 |---------|--------|
 | Root Directory | `client` |
 | Framework Preset | Vite |
 | Build Command | `npm run build` |
 | Output Directory | `dist` |
+
+`client/vercel.json` handles SPA rewrites.
+
+### Option B — Deploy from repo root
+
+If Root Directory is left blank, the root `vercel.json` builds `client/` automatically (`installCommand` / `buildCommand` / `outputDirectory`).
+
+Either way, redeploy after changing settings.
 
 3. **Environment variables** (Production):
 
@@ -72,8 +82,6 @@ VITE_PLAN_GATING_ENABLED=false
 ```
 
 4. Deploy → note URL, e.g. `https://muyai.vercel.app`
-
-`client/vercel.json` handles React Router SPA rewrites.
 
 ---
 
@@ -127,6 +135,7 @@ Use the dashboard or connect `render.yaml` via **New Blueprint**.
 
 | Issue | Fix |
 |-------|-----|
+| **NOT_FOUND** on Vercel URL | Set Root Directory to `client` **or** use root `vercel.json`; trigger **Redeploy** |
 | CORS error | Set `FRONTEND_URL` on Render to exact Vercel URL |
 | 401 on API | Check Firebase Admin env vars on Render |
 | Login fails on live site | Add Vercel domain to Firebase authorized domains |
