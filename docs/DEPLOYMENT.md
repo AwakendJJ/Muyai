@@ -27,6 +27,8 @@
 
 ### Environment variables (Render dashboard)
 
+**Supabase belongs here on Render — not on Vercel.** Vercel only needs `VITE_*` variables.
+
 Copy from your local `server/.env`:
 
 ```
@@ -40,21 +42,21 @@ AI_MODEL=deepseek-chat
 DEEPSEEK_API_KEY=       # or CLAUDE_API_KEY / OPENAI_API_KEY
 PLAN_GATING_ENABLED=false
 JOBS_DEFAULT_COUNTRY=remote
-FRONTEND_URL=           # set after Vercel deploy, e.g. https://muyai.vercel.app
+FRONTEND_URL=https://muyai.vercel.app
 ```
 
-4. Deploy and note your API URL, e.g. `https://muyai-api.onrender.com`
-5. Test: `https://muyai-api.onrender.com/api/health`
+4. Deploy and note your API URL, e.g. `https://muyai.onrender.com`
+5. Test: `https://muyai.onrender.com/api/health` (must return `"status":"ok"`)
 
 ---
 
 ## Step 2 — Deploy frontend on Vercel
 
 1. Go to [vercel.com](https://vercel.com) → **Add New Project** → import **AwakendJJ/Muyai**
-2. **Important:** set **Root Directory** to `client` (Edit → type `client` → Continue)
+2. **Important:** set **Root Directory** to exactly `client` — no leading/trailing spaces (a common error is `client ` which fails the build).
 
 | Setting | Value |
-|---------|--------|
+|--------|--------|
 | Root Directory | `client` |
 | Framework Preset | Vite |
 | Build Command | `npm run build` (default) |
@@ -68,7 +70,12 @@ Do **not** use `npm install --prefix client` when Root Directory is already `cli
 3. **Environment variables** (Production):
 
 ```
-VITE_API_URL=https://muyai-api.onrender.com/api
+VITE_API_URL=https://muyai.onrender.com/api
+```
+
+**Must include `/api` at the end.** Example: `https://muyai.onrender.com/api` (not just `https://muyai.onrender.com`).
+
+```
 VITE_FIREBASE_API_KEY=
 VITE_FIREBASE_AUTH_DOMAIN=
 VITE_FIREBASE_PROJECT_ID=
@@ -130,7 +137,9 @@ Use the dashboard or connect `render.yaml` via **New Blueprint**.
 
 | Issue | Fix |
 |-------|-----|
-| **ENOENT client/package.json** on Vercel | Root Directory is `client` but install used `--prefix client` — set Install to `npm install`, Build to `npm run build`, remove custom prefix commands |
+| **Failed to fetch** on login | Fix `VITE_API_URL` on Vercel (must end with `/api`); confirm Render `/api/health` returns 200; set `FRONTEND_URL` on Render; add `muyai.vercel.app` to Firebase authorized domains |
+| **Root Directory "client " does not exist** | Remove trailing space in Vercel → Settings → General → Root Directory; must be exactly `client` |
+| **ENOENT client/package.json** on Vercel | Root Directory is `client` but install used `--prefix client` — use default `npm install` |
 | **NOT_FOUND** on Vercel URL | Confirm Root Directory = `client` and redeploy after a successful build |
 | CORS error | Set `FRONTEND_URL` on Render to exact Vercel URL |
 | 401 on API | Check Firebase Admin env vars on Render |
