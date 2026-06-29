@@ -51,24 +51,19 @@ FRONTEND_URL=           # set after Vercel deploy, e.g. https://muyai.vercel.app
 ## Step 2 — Deploy frontend on Vercel
 
 1. Go to [vercel.com](https://vercel.com) → **Add New Project** → import **AwakendJJ/Muyai**
-2. Settings:
-
-### Option A — Root Directory = `client` (recommended)
+2. **Important:** set **Root Directory** to `client` (Edit → type `client` → Continue)
 
 | Setting | Value |
 |---------|--------|
 | Root Directory | `client` |
 | Framework Preset | Vite |
-| Build Command | `npm run build` |
-| Output Directory | `dist` |
+| Build Command | `npm run build` (default) |
+| Output Directory | `dist` (default) |
+| Install Command | `npm install` (default) |
 
-`client/vercel.json` handles SPA rewrites.
+Do **not** use `npm install --prefix client` when Root Directory is already `client`.
 
-### Option B — Deploy from repo root
-
-If Root Directory is left blank, the root `vercel.json` builds `client/` automatically (`installCommand` / `buildCommand` / `outputDirectory`).
-
-Either way, redeploy after changing settings.
+`client/vercel.json` handles SPA rewrites for React Router.
 
 3. **Environment variables** (Production):
 
@@ -135,7 +130,8 @@ Use the dashboard or connect `render.yaml` via **New Blueprint**.
 
 | Issue | Fix |
 |-------|-----|
-| **NOT_FOUND** on Vercel URL | Set Root Directory to `client` **or** use root `vercel.json`; trigger **Redeploy** |
+| **ENOENT client/package.json** on Vercel | Root Directory is `client` but install used `--prefix client` — set Install to `npm install`, Build to `npm run build`, remove custom prefix commands |
+| **NOT_FOUND** on Vercel URL | Confirm Root Directory = `client` and redeploy after a successful build |
 | CORS error | Set `FRONTEND_URL` on Render to exact Vercel URL |
 | 401 on API | Check Firebase Admin env vars on Render |
 | Login fails on live site | Add Vercel domain to Firebase authorized domains |
