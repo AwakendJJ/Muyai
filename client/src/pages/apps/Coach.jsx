@@ -18,7 +18,7 @@ const STARTER_PROMPTS = [
 ];
 
 export default function Coach() {
-  const { token, user } = useAuth();
+  const { token, getToken, user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [demoMode, setDemoMode] = useState(false);
@@ -56,11 +56,14 @@ export default function Coach() {
     setMessages(optimistic);
 
     try {
-      const response = await coachApi.sendMessage(token, trimmed);
+      const activeToken = (await getToken()) || token;
+      const response = await coachApi.sendMessage(activeToken, trimmed);
       setDemoMode(response.data.demo_mode);
       await load();
     } catch (err) {
-      setError(err.message);
+      setError(/failed to fetch|cannot reach api/i.test(err.message)
+        ? 'Could not reach the server. Restart backend and try again.'
+        : err.message);
       setMessages(messages);
       setInput(trimmed);
     } finally {
@@ -76,7 +79,9 @@ export default function Coach() {
       setMessages([]);
       setDemoMode(false);
     } catch (err) {
-      setError(err.message);
+      setError(/failed to fetch|cannot reach api/i.test(err.message)
+        ? 'Could not reach the server. Restart backend and try again.'
+        : err.message);
     }
   }
 

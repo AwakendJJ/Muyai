@@ -1,4 +1,4 @@
-const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const rawApiUrl = import.meta.env.VITE_API_URL || '/api';
 
 function normalizeApiUrl(url) {
   const trimmed = String(url || '').trim().replace(/\/$/, '');
@@ -7,14 +7,15 @@ function normalizeApiUrl(url) {
 }
 
 function getApiCandidates() {
-  const candidates = [normalizeApiUrl(rawApiUrl)].filter(Boolean);
+  const primary = normalizeApiUrl(rawApiUrl);
+  const candidates = primary ? [primary] : [];
 
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && primary.startsWith('http')) {
     const isLocalhost =
       window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
     if (isLocalhost) {
-      candidates.push('http://localhost:5000/api', 'http://127.0.0.1:5000/api');
+      candidates.push('http://127.0.0.1:5000/api', 'http://localhost:5000/api');
     }
   }
 
@@ -24,7 +25,11 @@ function getApiCandidates() {
 async function parseResponse(response) {
   const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
-    return response.json();
+    try {
+      return await response.json();
+    } catch {
+      return { error: 'Invalid JSON response from server' };
+    }
   }
 
   const text = await response.text();
@@ -32,8 +37,20 @@ async function parseResponse(response) {
 }
 
 export async function apiRequest(endpoint, options = {}) {
-  const { token, body, headers: customHeaders, ...fetchOptions } = options;
-  const candidates = getApiCandidates();
+  const {
+    token,
+    body,
+    headers: customHeaders,
+    timeoutMs = 30_000,
+    allowUrlFallback = true,
+    ...fetchOptions
+  } = options;
+
+  const isFormData = body instanceof FormData;
+  const candidates = allowUrlFallback && !isFormData
+    ? getApiCandidates()
+    : [getApiCandidates()[0]];
+
   let lastNetworkError = null;
 
   for (const baseUrl of candidates) {
@@ -43,7 +60,7 @@ export async function apiRequest(endpoint, options = {}) {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    if (body && !(body instanceof FormData)) {
+    if (body && !isFormData) {
       headers['Content-Type'] = 'application/json';
     }
 
@@ -51,7 +68,8 @@ export async function apiRequest(endpoint, options = {}) {
       const response = await fetch(`${baseUrl}${endpoint}`, {
         ...fetchOptions,
         headers,
-        body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
+        body: isFormData ? body : body ? JSON.stringify(body) : undefined,
+        signal: AbortSignal.timeout(timeoutMs),
       });
 
       const data = await parseResponse(response);
@@ -62,8 +80,7 @@ export async function apiRequest(endpoint, options = {}) {
 
       return data;
     } catch (error) {
-      // Retry on network-level failures for the next candidate URL.
-      if (error instanceof TypeError) {
+      if (error instanceof TypeError || error.name === 'AbortError' || error.name === 'TimeoutError') {
         lastNetworkError = error;
         continue;
       }
@@ -71,9 +88,13 @@ export async function apiRequest(endpoint, options = {}) {
     }
   }
 
+  if (lastNetworkError?.name === 'AbortError' || lastNetworkError?.name === 'TimeoutError') {
+    throw new Error('Request timed out. The server may still be processing — refresh and check your resumes.');
+  }
+
   throw new Error(
-    lastNetworkError?.message?.includes('Failed to fetch')
-      ? 'Cannot reach API server. Make sure backend is running on http://localhost:5000.'
+    lastNetworkError?.message?.toLowerCase().includes('fetch')
+      ? 'Cannot reach API server. Make sure backend is running on port 5000, then refresh the page.'
       : lastNetworkError?.message || 'Cannot reach API server.'
   );
 }

@@ -2,7 +2,7 @@ import * as resumeModel from '../models/resume.model.js';
 import * as skillModel from '../models/skill.model.js';
 import * as userModel from '../models/user.model.js';
 import { PLAN_GATING_ENABLED } from '../config/plan.js';
-import { extractPdfText, parseResumeText } from '../services/ai.service.js';
+import { extractPdfText, parseResumeWithFallback } from '../services/ai.service.js';
 
 const FREE_SCAN_LIMIT = 2;
 
@@ -52,7 +52,7 @@ export async function uploadResume(req, res) {
       });
     }
 
-    const analysis = await parseResumeText(rawText, req.user.id);
+    const analysis = await parseResumeWithFallback(rawText, req.user.id);
 
     const resume = await resumeModel.create({
       userId: req.user.id,
@@ -75,11 +75,13 @@ export async function uploadResume(req, res) {
         experience_summary: analysis.experience_summary,
         education: analysis.education,
         suggested_roles: analysis.suggested_roles,
+        demo_mode: analysis.demo_mode || false,
       },
       error: null,
     });
   } catch (error) {
     console.error('Upload resume error:', error);
+
     res.status(500).json({
       success: false,
       data: null,

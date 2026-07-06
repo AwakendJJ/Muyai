@@ -12,6 +12,8 @@ export function uploadResume(token, file) {
     method: 'POST',
     token,
     body: formData,
+    timeoutMs: 180_000,
+    allowUrlFallback: false,
   });
 }
 

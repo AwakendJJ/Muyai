@@ -1,5 +1,6 @@
 import { createRequire } from 'module';
 import * as aiUsageModel from '../models/aiUsage.model.js';
+import { fetchWithTimeout } from '../utils/fetch.js';
 
 const require = createRequire(import.meta.url);
 const pdfParse = require('pdf-parse');
@@ -75,7 +76,7 @@ async function callClaude(prompt, systemPrompt, model) {
   const apiKey = process.env.CLAUDE_API_KEY;
   if (!apiKey) throw new Error('CLAUDE_API_KEY is not configured');
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -119,7 +120,7 @@ async function callOpenAICompatible(prompt, systemPrompt, model, { apiKey, apiUr
     body.response_format = { type: 'json_object' };
   }
 
-  const response = await fetch(apiUrl, {
+  const response = await fetchWithTimeout(apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -188,7 +189,7 @@ export async function callAI(prompt, systemPrompt, options = {}) {
 }
 
 export async function parseResumeText(rawText, userId) {
-  const prompt = `Analyze this resume and extract skills, experience, education, and suggested career roles:\n\n${rawText}`;
+  const prompt = `Analyze this resume and extract skills, experience, education, and suggested career roles:\n\n${rawText.slice(0, 12000)}`;
 
   const { parsed } = await callAI(prompt, RESUME_PARSE_SYSTEM, {
     userId,
@@ -196,6 +197,49 @@ export async function parseResumeText(rawText, userId) {
   });
 
   return validateResumeParse(parsed);
+}
+
+const OFFLINE_SKILL_KEYWORDS = [
+  'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'PHP', 'Ruby',
+  'React', 'Vue', 'Angular', 'Node.js', 'Express', 'Django', 'Flask', 'Spring', 'Laravel',
+  'SQL', 'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Supabase', 'Firebase',
+  'HTML', 'CSS', 'Tailwind', 'Git', 'Docker', 'Kubernetes', 'AWS', 'Azure', 'Linux',
+  'Figma', 'Excel', 'Power BI', 'Tableau', 'Agile', 'Scrum', 'REST', 'GraphQL',
+  'Machine Learning', 'Data Analysis', 'Communication', 'Leadership', 'Problem Solving',
+];
+
+export function parseResumeOffline(rawText) {
+  const lower = rawText.toLowerCase();
+  const matched = OFFLINE_SKILL_KEYWORDS.filter((skill) => lower.includes(skill.toLowerCase()));
+  const skills = (matched.length ? matched : ['Communication', 'Problem Solving', 'Teamwork']).map(
+    (name) => ({
+      name,
+      proficiency: 'intermediate',
+      category: 'General',
+    })
+  );
+
+  return {
+    skills,
+    experience_summary: rawText.replace(/\s+/g, ' ').trim().slice(0, 400),
+    education: [],
+    suggested_roles: ['Software Engineer', 'Data Analyst'],
+    demo_mode: true,
+  };
+}
+
+export async function parseResumeWithFallback(rawText, userId) {
+  if (!isAIConfigured()) {
+    return parseResumeOffline(rawText);
+  }
+
+  try {
+    const analysis = await parseResumeText(rawText, userId);
+    return { ...analysis, demo_mode: false };
+  } catch (error) {
+    console.warn('AI resume parse failed, using offline fallback:', error.message);
+    return parseResumeOffline(rawText);
+  }
 }
 
 export async function extractPdfText(buffer) {
@@ -433,104 +477,135 @@ Write a tailored cover letter for this application.`;
   return { content: text, demo_mode: false };
 }
 
-export async function generateInterviewQuestions({ jobTitle, company, skills }, userId) {
-  if (!isAIConfigured()) {
-    const tailored = DEFAULT_INTERVIEW_QUESTIONS.map((q, i) => ({
-      ...q,
-      question: i === 0
-        ? `Tell me about yourself and why you want the ${jobTitle} role${company ? ` at ${company}` : ''}.`
-        : q.question,
-    }));
-    return { questions: tailored, demo_mode: true };
+function buildDemoInterviewQuestions(jobTitle, company) {
+  return DEFAULT_INTERVIEW_QUESTIONS.map((q, i) => ({
+    ...q,
+    question: i === 0
+      ? `Tell me about yourself and why you want the ${jobTitle} role${company ? ` at ${company}` : ''}.`
+      : q.question,
+  }));
+}
+
+function buildOfflineInterviewFeedback(answer) {
+  const wordCount = answer.trim().split(/\s+/).length;
+  const score = wordCount < 20 ? 4 : wordCount < 80 ? 6 : 8;
+  return {
+    feedback: score >= 7
+      ? 'Good structure. You addressed the question with relevant detail. Add a specific metric or outcome to strengthen your answer.'
+      : 'Try expanding your answer with a specific example using the STAR method (Situation, Task, Action, Result).',
+    score,
+    tips: [
+      'Use a concrete example from your experience',
+      'Quantify impact where possible',
+      'Keep answers under 2 minutes when spoken',
+    ],
+    demo_mode: true,
+  };
+}
+
+function buildOfflineCoachReply(message) {
+  const lower = message.toLowerCase();
+  let reply = 'I am here to help with your career journey. Ask me about job search strategies, interview prep, or skill development.';
+
+  if (lower.includes('interview')) {
+    reply = 'For interviews, prepare 3-5 STAR stories (Situation, Task, Action, Result) that highlight your best work. Practice out loud and keep answers under 2 minutes. Use the Interview Prep app to practice with role-specific questions.';
+  } else if (lower.includes('resume') || lower.includes('cv')) {
+    reply = 'Keep your resume focused on achievements, not just duties. Use numbers where possible (e.g. "reduced processing time by 30%"). Upload your resume in Resume Lab to get skill extraction and gap analysis.';
+  } else if (lower.includes('salary') || lower.includes('negotiat')) {
+    reply = 'Research market rates for your role and location before negotiating. Anchor with a range based on data, emphasize your unique value, and be prepared to discuss total compensation, not just base salary.';
+  } else if (lower.includes('remote') || lower.includes('job')) {
+    reply = 'Cast a wide net: use Job Match for remote roles, track applications in the Applications tracker, and tailor each cover letter. Consistency beats volume — aim for quality applications each week.';
   }
 
-  const skillsList = skills.map((s) => s.skill_name || s.name).join(', ');
-  const prompt = `Role: ${jobTitle}
+  return { reply, demo_mode: true };
+}
+
+export async function generateInterviewQuestions({ jobTitle, company, skills }, userId) {
+  const fallback = () => ({
+    questions: buildDemoInterviewQuestions(jobTitle, company),
+    demo_mode: true,
+  });
+
+  if (!isAIConfigured()) {
+    return fallback();
+  }
+
+  try {
+    const skillsList = skills.map((s) => s.skill_name || s.name).join(', ');
+    const prompt = `Role: ${jobTitle}
 Company: ${company || 'Not specified'}
 Candidate skills: ${skillsList || 'General'}
 
 Generate 5 interview questions mixing behavioral, technical, and situational categories.`;
 
-  const { parsed } = await callAI(prompt, INTERVIEW_QUESTIONS_SYSTEM, {
-    userId,
-    feature: 'interview_questions',
-  });
+    const { parsed } = await callAI(prompt, INTERVIEW_QUESTIONS_SYSTEM, {
+      userId,
+      feature: 'interview_questions',
+    });
 
-  const questions = (parsed.questions || [])
-    .filter((q) => q?.question)
-    .slice(0, 6)
-    .map((q) => ({
-      question: String(q.question).trim(),
-      category: q.category || 'behavioral',
-      answer: null,
-      feedback: null,
-      score: null,
-    }));
+    const questions = (parsed.questions || [])
+      .filter((q) => q?.question)
+      .slice(0, 6)
+      .map((q) => ({
+        question: String(q.question).trim(),
+        category: q.category || 'behavioral',
+        answer: null,
+        feedback: null,
+        score: null,
+      }));
 
-  return { questions: questions.length ? questions : DEFAULT_INTERVIEW_QUESTIONS, demo_mode: false };
+    if (!questions.length) {
+      return fallback();
+    }
+
+    return { questions, demo_mode: false };
+  } catch (error) {
+    console.warn('AI interview questions failed, using fallback:', error.message);
+    return fallback();
+  }
 }
 
 export async function evaluateInterviewAnswer({ question, answer, jobTitle }, userId) {
   if (!isAIConfigured()) {
-    const wordCount = answer.trim().split(/\s+/).length;
-    const score = wordCount < 20 ? 4 : wordCount < 80 ? 6 : 8;
-    return {
-      feedback: score >= 7
-        ? 'Good structure. You addressed the question with relevant detail. In demo mode, add an AI API key for personalized coaching.'
-        : 'Try expanding your answer with a specific example using the STAR method (Situation, Task, Action, Result).',
-      score,
-      tips: [
-        'Use a concrete example from your experience',
-        'Quantify impact where possible',
-        'Keep answers under 2 minutes when spoken',
-      ],
-      demo_mode: true,
-    };
+    return buildOfflineInterviewFeedback(answer);
   }
 
-  const prompt = `Role: ${jobTitle}
+  try {
+    const prompt = `Role: ${jobTitle}
 Question: ${question}
 Candidate answer: ${answer}
 
 Evaluate this interview answer.`;
 
-  const { parsed } = await callAI(prompt, INTERVIEW_FEEDBACK_SYSTEM, {
-    userId,
-    feature: 'interview_feedback',
-  });
+    const { parsed } = await callAI(prompt, INTERVIEW_FEEDBACK_SYSTEM, {
+      userId,
+      feature: 'interview_feedback',
+    });
 
-  return {
-    feedback: String(parsed.feedback || 'No feedback generated'),
-    score: Math.min(10, Math.max(1, Number(parsed.score) || 5)),
-    tips: Array.isArray(parsed.tips) ? parsed.tips.map(String) : [],
-    demo_mode: false,
-  };
+    return {
+      feedback: String(parsed.feedback || 'No feedback generated'),
+      score: Math.min(10, Math.max(1, Number(parsed.score) || 5)),
+      tips: Array.isArray(parsed.tips) ? parsed.tips.map(String) : [],
+      demo_mode: false,
+    };
+  } catch (error) {
+    console.warn('AI interview feedback failed, using fallback:', error.message);
+    return buildOfflineInterviewFeedback(answer);
+  }
 }
 
 export async function coachChat({ message, history, context }, userId) {
   if (!isAIConfigured()) {
-    const lower = message.toLowerCase();
-    let reply = 'I am here to help with your career journey. Ask me about job search strategies, interview prep, or skill development.';
-
-    if (lower.includes('interview')) {
-      reply = 'For interviews, prepare 3-5 STAR stories (Situation, Task, Action, Result) that highlight your best work. Practice out loud and keep answers under 2 minutes. Use the Interview Prep app to practice with role-specific questions.';
-    } else if (lower.includes('resume') || lower.includes('cv')) {
-      reply = 'Keep your resume focused on achievements, not just duties. Use numbers where possible (e.g. "reduced processing time by 30%"). Upload your resume in Resume Lab to get AI skill extraction and gap analysis.';
-    } else if (lower.includes('salary') || lower.includes('negotiat')) {
-      reply = 'Research market rates for your role and location before negotiating. Anchor with a range based on data, emphasize your unique value, and be prepared to discuss total compensation, not just base salary.';
-    } else if (lower.includes('remote') || lower.includes('job')) {
-      reply = 'Cast a wide net: use Job Match for remote roles, track applications in the Applications tracker, and tailor each cover letter. Consistency beats volume — aim for quality applications each week.';
-    }
-
-    return { reply: `${reply}\n\n[Demo mode — add an AI API key for personalized coaching]`, demo_mode: true };
+    return buildOfflineCoachReply(message);
   }
 
-  const historyText = history
-    .slice(-8)
-    .map((m) => `${m.role}: ${m.content}`)
-    .join('\n');
+  try {
+    const historyText = history
+      .slice(-8)
+      .map((m) => `${m.role}: ${m.content}`)
+      .join('\n');
 
-  const prompt = `Career context:
+    const prompt = `Career context:
 - Name: ${context.name || 'User'}
 - Plan: ${context.plan || 'free'}
 - Skills: ${context.skills?.join(', ') || 'Not specified'}
@@ -541,10 +616,15 @@ ${historyText || '(none)'}
 
 User message: ${message}`;
 
-  const { text } = await callAIText(prompt, COACH_SYSTEM, {
-    userId,
-    feature: 'career_coach',
-  });
+    const { text } = await callAIText(prompt, COACH_SYSTEM, {
+      userId,
+      feature: 'career_coach',
+    });
 
-  return { reply: text, demo_mode: false };
+    return { reply: text, demo_mode: false };
+  } catch (error) {
+    console.warn('AI coach chat failed, using fallback:', error.message);
+    return buildOfflineCoachReply(message);
+  }
 }
+

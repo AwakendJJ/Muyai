@@ -14,7 +14,7 @@ import { Skeleton } from '../../components/ui/skeleton.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function Interview() {
-  const { token } = useAuth();
+  const { token, getToken } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [activeSession, setActiveSession] = useState(null);
   const [resumes, setResumes] = useState([]);
@@ -53,13 +53,16 @@ export default function Interview() {
     setError('');
     setStarting(true);
     try {
-      const response = await interviewApi.startSession(token, form);
+      const activeToken = (await getToken()) || token;
+      const response = await interviewApi.startSession(activeToken, form);
       setActiveSession(response.data.session);
       setDemoMode(response.data.demo_mode);
       setAnswers({});
       await load();
     } catch (err) {
-      setError(err.message);
+      setError(/failed to fetch|cannot reach api/i.test(err.message)
+        ? 'Could not reach the server. Restart backend and try again.'
+        : err.message);
     } finally {
       setStarting(false);
     }
@@ -76,7 +79,9 @@ export default function Interview() {
       });
       setAnswers(prefilled);
     } catch (err) {
-      setError(err.message);
+      setError(/failed to fetch|cannot reach api/i.test(err.message)
+        ? 'Could not reach the server. Restart backend and try again.'
+        : err.message);
     }
   }
 
@@ -86,14 +91,17 @@ export default function Interview() {
     setError('');
     setSubmitting(true);
     try {
-      const response = await interviewApi.submitAnswer(token, activeSession.id, {
+      const activeToken = (await getToken()) || token;
+      const response = await interviewApi.submitAnswer(activeToken, activeSession.id, {
         question_index: questionIndex,
         answer,
       });
       setActiveSession(response.data.session);
       setDemoMode(response.data.demo_mode);
     } catch (err) {
-      setError(err.message);
+      setError(/failed to fetch|cannot reach api/i.test(err.message)
+        ? 'Could not reach the server. Restart backend and try again.'
+        : err.message);
     } finally {
       setSubmitting(false);
     }
@@ -107,7 +115,9 @@ export default function Interview() {
       if (activeSession?.id === id) setActiveSession(null);
       await load();
     } catch (err) {
-      setError(err.message);
+      setError(/failed to fetch|cannot reach api/i.test(err.message)
+        ? 'Could not reach the server. Restart backend and try again.'
+        : err.message);
     }
   }
 

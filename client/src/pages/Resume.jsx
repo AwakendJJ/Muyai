@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs.
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Resume() {
-  const { token, user } = useAuth();
+  const { token, getToken, user } = useAuth();
   const [resumes, setResumes] = useState([]);
   const [scanCount, setScanCount] = useState(0);
   const [scanLimit, setScanLimit] = useState(null);
@@ -24,6 +24,7 @@ export default function Resume() {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [dragOver, setDragOver] = useState(false);
 
   const atScanLimit = scanLimit !== null && scanCount >= scanLimit;
@@ -59,15 +60,29 @@ export default function Resume() {
     }
 
     setError('');
+    setNotice('');
     setUploading(true);
 
     try {
-      const response = await resumesApi.uploadResume(token, file);
+      const activeToken = (await getToken()) || token;
+      if (!activeToken) {
+        throw new Error('Please sign in again to upload a resume.');
+      }
+
+      const response = await resumesApi.uploadResume(activeToken, file);
       await loadResumes();
       setSelectedResume(response.data.resume);
       setSkills(response.data.skills);
+      if (response.data.demo_mode) {
+        setNotice('Resume saved with basic skill detection because AI was unreachable. You can still use gap analysis and job match.');
+      }
     } catch (err) {
-      setError(err.message);
+      const message = err.message || 'Upload failed';
+      setError(
+        /failed to fetch|cannot reach api/i.test(message)
+          ? 'Upload could not reach the server. Restart backend (port 5000) and frontend, then try again.'
+          : message
+      );
     } finally {
       setUploading(false);
     }
@@ -106,6 +121,11 @@ export default function Resume() {
       </PageHeader>
 
       {error && <ErrorBanner message={error} className="mt-6" />}
+      {notice && (
+        <Card className="mt-6 border-blue/20 bg-blue/5">
+          <CardContent className="p-4 text-sm text-gray-text">{notice}</CardContent>
+        </Card>
+      )}
 
       {atScanLimit ? (
         <Card className="mt-8 border-2 border-purple/20 bg-purple/5 p-8 text-center">
