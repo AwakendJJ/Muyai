@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { APP_GROUPS, APPS, canAccessApp, getLockMessage } from '../../config/apps.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import Logo from '../brand/Logo.jsx';
 import PlanBadge from '../PlanBadge.jsx';
 import { Button } from '../ui/button.jsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip.jsx';
@@ -45,14 +46,14 @@ function NavItem({ app, onNavigate }) {
           {isActive && (
             <motion.div
               layoutId="sidebar-active"
-              className="absolute inset-0 rounded-xl bg-purple/10"
+              className="absolute inset-0 rounded-xl bg-primary/10"
               transition={{ type: 'spring', stiffness: 380, damping: 30 }}
             />
           )}
           <div
             className={cn(
               'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
-              isActive ? 'text-purple' : 'text-gray-text hover:bg-muted hover:text-dark'
+              isActive ? 'text-primary-dark' : 'text-gray-text hover:bg-muted hover:text-dark'
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
@@ -72,8 +73,8 @@ export default function AppSidebar({ onNavigate, className }) {
   return (
     <TooltipProvider>
       <aside className={cn('flex h-full flex-col bg-white', className)}>
-        <div className="border-b border-gray-100 px-5 py-6">
-          <p className="text-xl font-bold tracking-tight">Muyai</p>
+        <div className="border-b border-border px-5 py-6">
+          <Logo to="/apps/dashboard" size="sm" />
           <div className="mt-3">
             <PlanBadge plan={user?.plan} />
           </div>
@@ -99,7 +100,7 @@ export default function AppSidebar({ onNavigate, className }) {
           })}
         </nav>
 
-        <div className="border-t border-gray-100 px-5 py-4">
+        <div className="border-t border-border px-5 py-4">
           <p className="truncate text-sm font-medium">{user?.name}</p>
           <p className="truncate text-xs text-gray-text">{user?.email}</p>
           <Button variant="outline" className="mt-3 w-full" size="sm" onClick={logout}>

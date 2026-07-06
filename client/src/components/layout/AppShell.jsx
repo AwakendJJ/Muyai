@@ -11,7 +11,7 @@ export default function AppShell({ children }) {
 
   return (
     <div className="flex min-h-svh bg-muted">
-      <div className="hidden w-64 shrink-0 border-r border-gray-100 lg:block">
+      <div className="hidden w-64 shrink-0 border-r border-border lg:block">
         <AppSidebar className="sticky top-0 h-svh" />
       </div>
 

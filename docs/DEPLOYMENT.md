@@ -89,7 +89,7 @@ VITE_PLAN_GATING_ENABLED=false
 
 ## Step 3 — Connect frontend ↔ backend
 
-1. In **Render**, set `FRONTEND_URL` to your Vercel URL (no trailing slash):
+1. In **Render**, set `FRONTEND_URL` to your Vercel URL (**no trailing slash**):
    ```
    FRONTEND_URL=https://muyai.vercel.app
    ```
@@ -137,7 +137,7 @@ Use the dashboard or connect `render.yaml` via **New Blueprint**.
 
 | Issue | Fix |
 |-------|-----|
-| **Failed to fetch** on login | Fix `VITE_API_URL` on Vercel (must end with `/api`); confirm Render `/api/health` returns 200; set `FRONTEND_URL` on Render; add `muyai.vercel.app` to Firebase authorized domains |
+| **Failed to fetch** on login | **CORS** — redeploy Render with latest code; set `FRONTEND_URL=https://muyai.vercel.app` (no trailing slash); confirm `VITE_API_URL` on Vercel ends with `/api`; check Render `/api/health` |
 | **Root Directory "client " does not exist** | Remove trailing space in Vercel → Settings → General → Root Directory; must be exactly `client` |
 | **ENOENT client/package.json** on Vercel | Root Directory is `client` but install used `--prefix client` — use default `npm install` |
 | **NOT_FOUND** on Vercel URL | Confirm Root Directory = `client` and redeploy after a successful build |

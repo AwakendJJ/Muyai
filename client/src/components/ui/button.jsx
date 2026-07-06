@@ -4,17 +4,18 @@ import { cva } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple/30 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: 'bg-dark text-white hover:opacity-90',
-        purple: 'bg-purple text-white hover:opacity-90',
-        pink: 'bg-pink text-white hover:opacity-90',
+        default: 'bg-navy text-white hover:bg-navy-light shadow-sm',
+        primary: 'bg-primary text-white hover:bg-primary-dark shadow-sm shadow-primary/20',
+        purple: 'bg-primary text-white hover:bg-primary-dark shadow-sm shadow-primary/20',
+        pink: 'bg-accent-warm text-white hover:opacity-90',
         blue: 'bg-blue text-white hover:opacity-90',
-        outline: 'border border-gray-200 bg-white text-dark hover:bg-muted',
+        outline: 'border border-border bg-white text-dark hover:bg-muted',
         ghost: 'text-gray-text hover:bg-muted hover:text-dark',
-        pill: 'rounded-full bg-dark text-white hover:opacity-90 px-6',
+        pill: 'rounded-full bg-navy text-white hover:bg-navy-light px-6',
       },
       size: {
         default: 'h-10 px-4 py-2',

@@ -1,4 +1,5 @@
-const rawApiUrl = import.meta.env.VITE_API_URL || '/api';
+// Dev uses Vite proxy (/api). Production must set VITE_API_URL on Vercel.
+const rawApiUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : '');
 
 function normalizeApiUrl(url) {
   const trimmed = String(url || '').trim().replace(/\/$/, '');
@@ -8,7 +9,13 @@ function normalizeApiUrl(url) {
 
 function getApiCandidates() {
   const primary = normalizeApiUrl(rawApiUrl);
-  const candidates = primary ? [primary] : [];
+  if (!primary) {
+    throw new Error(
+      'API URL is not configured. Set VITE_API_URL on Vercel to https://muyai.onrender.com/api and redeploy.'
+    );
+  }
+
+  const candidates = [primary];
 
   if (typeof window !== 'undefined' && primary.startsWith('http')) {
     const isLocalhost =
@@ -94,7 +101,9 @@ export async function apiRequest(endpoint, options = {}) {
 
   throw new Error(
     lastNetworkError?.message?.toLowerCase().includes('fetch')
-      ? 'Cannot reach API server. Make sure backend is running on port 5000, then refresh the page.'
+      ? import.meta.env.DEV
+        ? 'Cannot reach API server. Make sure backend is running on port 5000, then refresh the page.'
+        : 'Cannot reach API server. Check VITE_API_URL on Vercel and that Render is running.'
       : lastNetworkError?.message || 'Cannot reach API server.'
   );
 }

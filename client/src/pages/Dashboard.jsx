@@ -17,8 +17,8 @@ import { APPS, canAccessApp } from '../config/apps.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const PLAN_CARDS = {
-  free: { color: 'bg-pink', label: 'Free', desc: '2 scans, basic skill report' },
-  student: { color: 'bg-purple', label: 'Student', desc: 'Unlimited scans, gap analysis' },
+  free: { color: 'bg-accent-warm', label: 'Free', desc: '2 scans, basic skill report' },
+  student: { color: 'bg-primary', label: 'Student', desc: 'Unlimited scans, gap analysis' },
   pro: { color: 'bg-blue', label: 'Pro', desc: 'Job matching, cover letters, tracker' },
 };
 
@@ -111,8 +111,8 @@ export default function Dashboard() {
               <Card className="relative h-full transition-shadow hover:shadow-md">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple/10">
-                      <Icon className="h-5 w-5 text-purple" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                      <Icon className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <CardTitle className="text-base">{app.label}</CardTitle>
@@ -170,7 +170,7 @@ export default function Dashboard() {
                   className="flex items-center justify-between rounded-xl bg-muted/50 px-4 py-3 text-sm font-medium transition-colors hover:bg-muted"
                 >
                   {action.label}
-                  <ArrowRight className="h-4 w-4 text-purple" />
+                  <ArrowRight className="h-4 w-4 text-primary" />
                 </Link>
               ))}
             </CardContent>
@@ -181,7 +181,7 @@ export default function Dashboard() {
       <div className="mt-10">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold">Skill summary</h2>
-          <Link to="/apps/resume" className="text-sm font-semibold text-purple hover:underline">
+          <Link to="/apps/resume" className="text-sm font-semibold text-primary hover:underline">
             {resumes.length ? 'View all' : 'Upload resume'}
           </Link>
         </div>
@@ -193,14 +193,14 @@ export default function Dashboard() {
           <Card className="mt-4 p-8 text-center">
             <FileText className="mx-auto h-10 w-10 text-gray-text" />
             <p className="mt-4 text-gray-text">No resume uploaded yet.</p>
-            <Button variant="purple" className="mt-4" asChild>
+            <Button variant="primary" className="mt-4" asChild>
               <Link to="/apps/resume">Upload your first resume</Link>
             </Button>
           </Card>
         )}
       </div>
 
-      <Card className="mt-8 border-purple/20 bg-purple/5 p-2">
+      <Card className="mt-8 border-primary/20 bg-primary/5 p-2">
         <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="font-bold">Activity tracker</h3>
@@ -210,7 +210,7 @@ export default function Dashboard() {
                 : 'Start tracking applications to see your job search progress here.'}
             </p>
           </div>
-          <Button variant="purple" asChild>
+          <Button variant="primary" asChild>
             <Link to="/apps/applications">
               {appStats?.total > 0 ? 'View applications' : 'Add application'}
             </Link>
@@ -219,13 +219,13 @@ export default function Dashboard() {
       </Card>
 
       {user?.plan === 'free' && (
-        <Card className="mt-8 border-2 border-purple/20 bg-purple/5">
+        <Card className="mt-8 border-2 border-primary/20 bg-primary/5">
           <CardContent className="p-6">
             <h3 className="font-bold">Unlock more with Student</h3>
             <p className="mt-1 text-sm text-gray-text">
               Get unlimited scans, gap analysis, and personalized course recommendations.
             </p>
-            <Button variant="purple" className="mt-4" asChild>
+            <Button variant="primary" className="mt-4" asChild>
               <a href="/#pricing">View plans</a>
             </Button>
           </CardContent>

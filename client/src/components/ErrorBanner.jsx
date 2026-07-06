@@ -7,7 +7,7 @@ export default function ErrorBanner({ message, className, children }) {
   return (
     <div
       className={cn(
-        'flex items-start gap-3 rounded-xl border border-pink/20 bg-pink/10 px-4 py-3 text-sm text-pink',
+        'flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive',
         className
       )}
       role="alert"

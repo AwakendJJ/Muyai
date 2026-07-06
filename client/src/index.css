@@ -1,19 +1,36 @@
 @import "tailwindcss";
 
 @theme {
-  --color-pink: #FF007A;
-  --color-purple: #9D00FF;
-  --color-blue: #007AFF;
-  --color-orange: #FF5C00;
-  --color-surface: #FFFFFF;
-  --color-muted: #F5F5F7;
-  --color-dark: #111111;
-  --color-gray-text: #6B7280;
-  --color-border: #E5E7EB;
-  --color-background: #FFFFFF;
-  --color-foreground: #111111;
+  /* Horizon — teal growth + amber warmth + deep navy */
+  --color-primary: #0D9488;
+  --color-primary-dark: #0F766E;
+  --color-primary-light: #14B8A6;
+  --color-accent: #F59E0B;
+  --color-accent-warm: #F97316;
+  --color-navy: #0F172A;
+  --color-navy-light: #1E293B;
 
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --color-surface: #FAFAF8;
+  --color-muted: #F0FDFA;
+  --color-dark: #0F172A;
+  --color-gray-text: #64748B;
+  --color-border: #E2E8F0;
+  --color-background: #FAFAF8;
+  --color-foreground: #0F172A;
+  --color-destructive: #DC2626;
+
+  /* Legacy aliases — remapped so app pages inherit new palette */
+  --color-pink: #F97316;
+  --color-purple: #0D9488;
+  --color-blue: #2563EB;
+  --color-orange: #F59E0B;
+
+  --font-sans: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-display: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
 }
 
 @layer base {
@@ -25,23 +42,39 @@
   #root {
     min-height: 100svh;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
 }
 
 @layer components {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
   .btn-pill {
     @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200;
   }
 
   .btn-pill-dark {
-    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-dark text-white hover:opacity-90;
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-navy text-white hover:bg-navy-light shadow-lg shadow-navy/10;
+  }
+
+  .btn-pill-primary {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/20;
+  }
+
+  .btn-pill-accent {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-accent text-white hover:opacity-90 shadow-lg shadow-accent/20;
   }
 
   .btn-pill-pink {
-    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-pink text-white hover:opacity-90;
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-accent text-white hover:opacity-90 shadow-lg shadow-accent/20;
   }
 
   .btn-pill-purple {
-    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-purple text-white hover:opacity-90;
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 bg-primary text-white hover:bg-primary-dark shadow-lg shadow-primary/20;
   }
 
   .btn-pill-blue {
@@ -49,22 +82,50 @@
   }
 
   .card-rounded {
-    @apply rounded-2xl bg-white shadow-sm border border-gray-100;
+    @apply rounded-2xl bg-white shadow-sm border border-border;
+  }
+
+  .glass-nav {
+    @apply border-b border-border/60 bg-surface/80 backdrop-blur-xl;
   }
 
   .pill-tag {
-    @apply inline-flex items-center gap-2 rounded-full bg-blue px-4 py-2 text-sm font-medium text-white;
+    @apply inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary-dark;
   }
 
   .plan-badge-free {
-    @apply inline-flex rounded-full bg-pink/10 px-3 py-1 text-xs font-semibold text-pink;
+    @apply inline-flex rounded-full bg-accent-warm/10 px-3 py-1 text-xs font-semibold text-accent-warm;
   }
 
   .plan-badge-student {
-    @apply inline-flex rounded-full bg-purple/10 px-3 py-1 text-xs font-semibold text-purple;
+    @apply inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary-dark;
   }
 
   .plan-badge-pro {
     @apply inline-flex rounded-full bg-blue/10 px-3 py-1 text-xs font-semibold text-blue;
+  }
+
+  .gradient-hero {
+    background:
+      radial-gradient(ellipse 80% 60% at 70% 20%, color-mix(in srgb, var(--color-primary-light) 18%, transparent), transparent),
+      radial-gradient(ellipse 60% 50% at 10% 80%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent),
+      var(--color-surface);
+  }
+
+  .gradient-auth {
+    background: linear-gradient(145deg, var(--color-navy) 0%, var(--color-primary-dark) 50%, var(--color-primary) 100%);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 50%, var(--color-accent) 100%);
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-border bg-white px-4 py-3 text-sm outline-none transition-all placeholder:text-gray-text/60 focus:border-primary focus:ring-2 focus:ring-primary/20;
+  }
+
+  .section-label {
+    @apply inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary-dark;
   }
 }

@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import ErrorBanner from '../components/ErrorBanner.jsx';
+import AuthLayout from '../components/landing/AuthLayout.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Card, CardContent } from '../components/ui/card.jsx';
+import { Input } from '../components/ui/input.jsx';
 import { Separator } from '../components/ui/separator.jsx';
 
 function GoogleIcon() {
@@ -61,96 +63,84 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-svh">
-      <div className="hidden w-1/2 bg-gradient-to-br from-purple via-pink to-blue lg:flex lg:flex-col lg:justify-center lg:p-12">
-        <p className="text-3xl font-bold text-white">Muyai</p>
-        <h2 className="mt-6 text-4xl font-bold leading-tight text-white">
-          Elevate your career with AI
-        </h2>
-        <p className="mt-4 max-w-md text-white/80">
-          Upload your resume, discover your skills, and get personalized career guidance built for African talent.
-        </p>
-      </div>
+    <AuthLayout
+      title="Welcome back"
+      subtitle="Sign in to continue your AI-powered career journey — your skills, gaps, and roadmap are waiting."
+    >
+      <Card className="border-border shadow-lg shadow-primary/5">
+        <CardContent className="p-8">
+          <h1 className="font-display text-2xl font-bold">Sign in</h1>
+          <p className="mt-2 text-sm text-gray-text">
+            Enter your credentials to access your dashboard
+          </p>
 
-      <div className="flex flex-1 items-center justify-center bg-muted px-6 py-12">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8">
-            <div className="text-center lg:hidden">
-              <Link to="/" className="text-2xl font-bold">Muyai</Link>
+          <div className="mt-8 space-y-4">
+            {successMessage && (
+              <div className="rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary-dark">
+                {successMessage}
+              </div>
+            )}
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleGoogle}
+              disabled={submitting}
+            >
+              <GoogleIcon />
+              Continue with Google
+            </Button>
+
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-gray-text">or</span>
+              <Separator className="flex-1" />
             </div>
-            <h1 className="mt-2 text-center text-2xl font-bold lg:mt-0 lg:text-left">Welcome back</h1>
-            <p className="mt-2 text-center text-sm text-gray-text lg:text-left">
-              Sign in to continue your career journey
-            </p>
 
-            <div className="mt-8 space-y-4">
-              {successMessage && (
-                <div className="rounded-xl border border-purple/20 bg-purple/10 px-4 py-3 text-sm text-purple">
-                  {successMessage}
-                </div>
-              )}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {error && <ErrorBanner message={error} />}
 
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleGoogle}
-                disabled={submitting}
-              >
-                <GoogleIcon />
-                Continue with Google
-              </Button>
-
-              <div className="flex items-center gap-3">
-                <Separator className="flex-1" />
-                <span className="text-xs text-gray-text">or</span>
-                <Separator className="flex-1" />
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium">Email</label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="mt-1.5"
+                  placeholder="you@example.com"
+                />
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {error && <ErrorBanner message={error} />}
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium">Password</label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="mt-1.5"
+                  placeholder="Your password"
+                />
+              </div>
 
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium">Email</label>
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-purple focus:ring-2 focus:ring-purple/20"
-                    placeholder="you@example.com"
-                  />
-                </div>
+              <Button type="submit" variant="primary" className="w-full" disabled={submitting}>
+                {submitting ? 'Signing in...' : 'Sign in'}
+              </Button>
+            </form>
+          </div>
 
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium">Password</label>
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-purple focus:ring-2 focus:ring-purple/20"
-                    placeholder="Your password"
-                  />
-                </div>
-
-                <Button type="submit" variant="default" className="w-full" disabled={submitting}>
-                  {submitting ? 'Signing in...' : 'Sign in'}
-                </Button>
-              </form>
-            </div>
-
-            <p className="mt-6 text-center text-sm text-gray-text">
-              Don&apos;t have an account?{' '}
-              <Link to="/register" className="font-semibold text-purple hover:underline">
-                Sign up
-              </Link>
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          <p className="mt-6 text-center text-sm text-gray-text">
+            Don&apos;t have an account?{' '}
+            <Link to="/register" className="font-semibold text-primary hover:underline">
+              Create one free
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+    </AuthLayout>
   );
 }
