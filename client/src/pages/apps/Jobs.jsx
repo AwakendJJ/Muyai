@@ -26,6 +26,7 @@ export default function Jobs() {
   const [country, setCountry] = useState('remote');
   const [provider, setProvider] = useState('');
   const [ethiojobsPending, setEthiojobsPending] = useState(false);
+  const [parseError, setParseError] = useState('');
   const [jobs, setJobs] = useState([]);
   const [demoMode, setDemoMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,6 +68,7 @@ export default function Jobs() {
       setDemoMode(response.data.demo_mode || false);
       setProvider(response.data.provider || '');
       setEthiojobsPending(response.data.ethiojobs_pending || false);
+      setParseError(response.data.parse_error || '');
       setSearchQuery(response.data.search_query || '');
     } catch (err) {
       setError(err.message);
@@ -89,6 +91,7 @@ export default function Jobs() {
       setDemoMode(response.data.demo_mode || false);
       setProvider(response.data.provider || '');
       setEthiojobsPending(response.data.ethiojobs_pending || false);
+      setParseError(response.data.parse_error || '');
       setSearchQuery(query || 'software');
     } catch (err) {
       setError(err.message);
@@ -132,7 +135,7 @@ export default function Jobs() {
       <PlanGate minimumPlan="free">
         <PageHeader
           title="Job Match"
-          description="Live remote jobs via Remotive; local Ethiopia listings when you add your EthioJobs API"
+          description="Remote jobs via Remotive; Ethiopian listings via EthioJobs when Parse API key is set"
         />
 
         {error && <ErrorBanner message={error} className="mt-6" />}
@@ -150,11 +153,23 @@ export default function Jobs() {
         {ethiojobsPending && (
           <Card className="mt-6 border-blue/20 bg-blue/5">
             <CardContent className="p-4 text-sm text-gray-text">
-              EthioJobs API not configured yet — showing remote listings from{' '}
-              <a href="https://remotive.com" target="_blank" rel="noopener noreferrer" className="text-purple hover:underline">
-                Remotive
-              </a>
-              . Add <code className="rounded bg-muted px-1">PARSE_API_KEY</code> later for local Ethiopian jobs.
+              {parseError ? (
+                <>
+                  EthioJobs via Parse failed — showing Remotive fallback. Check your{' '}
+                  <code className="rounded bg-muted px-1">PARSE_API_KEY</code> in{' '}
+                  <code className="rounded bg-muted px-1">server/.env</code> and restart the server.
+                  <span className="mt-2 block text-xs text-gray-400">{parseError}</span>
+                </>
+              ) : (
+                <>
+                  EthioJobs API not configured — showing remote listings from{' '}
+                  <a href="https://remotive.com" target="_blank" rel="noopener noreferrer" className="text-purple hover:underline">
+                    Remotive
+                  </a>
+                  . Add <code className="rounded bg-muted px-1">PARSE_API_KEY</code> to{' '}
+                  <code className="rounded bg-muted px-1">server/.env</code> for Ethiopian jobs via Parse.
+                </>
+              )}
             </CardContent>
           </Card>
         )}

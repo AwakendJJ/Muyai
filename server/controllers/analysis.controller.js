@@ -6,7 +6,7 @@ import { analyzeSkillGaps } from '../services/ai.service.js';
 
 export async function listJobRoles(req, res) {
   try {
-    const jobRoles = await jobRoleModel.findAll();
+    const jobRoles = await jobRoleModel.ensureDefaults();
 
     res.json({
       success: true,

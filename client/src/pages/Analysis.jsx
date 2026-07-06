@@ -140,11 +140,16 @@ export default function Analysis() {
                     id="role"
                     value={selectedRoleId}
                     onChange={(e) => setSelectedRoleId(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-purple"
+                    disabled={jobRoles.length === 0}
+                    className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none focus:border-purple disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {jobRoles.map((role) => (
-                      <option key={role.id} value={role.id}>{role.title}</option>
-                    ))}
+                    {jobRoles.length === 0 ? (
+                      <option value="">No roles available</option>
+                    ) : (
+                      jobRoles.map((role) => (
+                        <option key={role.id} value={String(role.id)}>{role.title}</option>
+                      ))
+                    )}
                   </select>
                 </div>
               </CardContent>
@@ -154,7 +159,7 @@ export default function Analysis() {
               variant="purple"
               className="mt-6"
               onClick={handleAnalyze}
-              disabled={analyzing}
+              disabled={analyzing || !selectedRoleId || jobRoles.length === 0}
             >
               {analyzing ? 'Analyzing...' : 'Run gap analysis'}
             </Button>

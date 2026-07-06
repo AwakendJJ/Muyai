@@ -112,7 +112,8 @@ Open `http://localhost:5173`
 ## Verification Checklist
 
 ### Database
-- [ ] All 7 tables visible in Supabase Table Editor
+- [ ] All tables visible in Supabase Table Editor (including Phase 5: `applications`, `cover_letters`, `interview_sessions`, `coach_messages`)
+- [ ] If Phase 5 tables are missing, run `database/phase5-only.sql` in Supabase SQL Editor
 - [ ] 4 seed users in `users` table
 - [ ] 5 job roles in `job_roles` table
 - [ ] `/api/health` returns `"database": "connected"`

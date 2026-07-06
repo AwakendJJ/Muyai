@@ -4,6 +4,9 @@ import dotenv from 'dotenv';
 import multer from 'multer';
 import { testConnection } from './config/db.js';
 import { initFirebaseAdmin } from './config/firebase.js';
+import { isAIConfigured } from './services/ai.service.js';
+import { getParseConfig } from './config/parse.js';
+import { checkPhase5Tables } from './config/schemaCheck.js';
 import authRoutes from './routes/auth.routes.js';
 import resumeRoutes from './routes/resume.routes.js';
 import analysisRoutes from './routes/analysis.routes.js';
@@ -44,9 +47,27 @@ app.use('/api/admin', adminRoutes);
 app.get('/api/health', async (req, res) => {
   try {
     await testConnection();
+    const parse = getParseConfig();
+    const phase5 = await checkPhase5Tables();
     res.json({
       success: true,
-      data: { status: 'ok', database: 'connected' },
+      data: {
+        status: 'ok',
+        database: 'connected',
+        phase5: phase5.ready ? 'ready' : 'missing_tables',
+        phase5_tables: phase5.tables,
+        ai: {
+          configured: isAIConfigured(),
+          provider: process.env.AI_PROVIDER || 'claude',
+          model: process.env.AI_MODEL || 'default',
+        },
+        jobs: {
+          remotive: true,
+          ethiojobs: parse.isConfigured,
+          parse_scraper_id: parse.scraperId,
+          adzuna: Boolean(process.env.ADZUNA_APP_ID && process.env.ADZUNA_APP_KEY),
+        },
+      },
       error: null,
     });
   } catch (error) {
@@ -90,6 +111,17 @@ async function start() {
   try {
     await testConnection();
     console.log('Database connected');
+
+    const phase5 = await checkPhase5Tables();
+    if (!phase5.ready) {
+      const missing = Object.entries(phase5.tables)
+        .filter(([, ok]) => !ok)
+        .map(([name]) => name);
+      console.warn(
+        `Warning: Phase 5 tables missing (${missing.join(', ')}). ` +
+          'Run database/phase5-only.sql in Supabase SQL Editor or: node scripts/apply-phase5-schema.js'
+      );
+    }
   } catch (error) {
     console.warn('Warning: Supabase not connected. Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env');
     console.warn(error.message);

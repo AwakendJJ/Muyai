@@ -1,5 +1,5 @@
-const PARSE_ETHIOJOBS_BASE =
-  'https://api.parse.bot/scraper/18f6a24b-3d12-44c1-a231-3678d07f5169';
+import { getParseConfig } from '../config/parse.js';
+import { searchEthioJobs } from './parseJobs.service.js';
 
 const REMOTIVE_API = 'https://remotive.com/api/remote-jobs';
 
@@ -71,36 +71,7 @@ function mapAdzunaJob(result) {
   };
 }
 
-function mapEthioJobsItem(item) {
-  const categories = (item.catalogs || []).map((c) => c.name).filter(Boolean).join(', ');
-  const slug = item.slug;
-  return {
-    id: String(item.id),
-    title: item.title || 'Untitled role',
-    company: item.company?.name || 'Unknown company',
-    location: item.state || 'Ethiopia',
-    description: item.description || categories || '',
-    categories,
-    salary_min: null,
-    salary_max: null,
-    url: slug ? `https://ethiojobs.net/jobs/${slug}` : 'https://ethiojobs.net',
-    created_at: item.date_published || null,
-    source: 'ethiojobs',
-  };
-}
-
-function unwrapEthioJobsPayload(body) {
-  const data = body?.data?.data || body?.data || body;
-  const items = data?.items || [];
-  return {
-    items,
-    total: data?.total ?? items.length,
-    page: data?.current_page ?? 1,
-  };
-}
-
-/** Free public API — no key required. https://remotive.com/api */
-async function fetchFromRemotive({ query, page = 1 }) {
+export async function fetchFromRemotive({ query, page = 1 }) {
   const params = new URLSearchParams();
   if (query) params.set('search', query);
   params.set('limit', '25');
@@ -115,7 +86,6 @@ async function fetchFromRemotive({ query, page = 1 }) {
   const data = await response.json();
   let jobs = (data.jobs || []).map(mapRemotiveJob);
 
-  // Simple client-side pagination (Remotive returns full list)
   const perPage = 20;
   const start = (page - 1) * perPage;
   jobs = jobs.slice(start, start + perPage);
@@ -131,10 +101,9 @@ async function fetchFromRemotive({ query, page = 1 }) {
 }
 
 async function fetchFromEthioJobs({ query, page = 1, limit = 20 }) {
-  const apiKey = process.env.PARSE_API_KEY;
+  const { isConfigured } = getParseConfig();
 
-  if (!apiKey) {
-    // Until EthioJobs API key is provided, use free Remotive listings
+  if (!isConfigured) {
     const remotive = await fetchFromRemotive({ query: query || 'developer', page });
     return {
       ...remotive,
@@ -144,40 +113,22 @@ async function fetchFromEthioJobs({ query, page = 1, limit = 20 }) {
     };
   }
 
-  const params = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-    query: query || 'engineer',
-  });
-
-  const url = `${PARSE_ETHIOJOBS_BASE}/search_jobs?${params}`;
-  const response = await fetch(url, {
-    headers: {
-      'X-API-Key': apiKey,
-      Accept: 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`EthioJobs search failed (${response.status}): ${body.slice(0, 120)}`);
+  try {
+    return await searchEthioJobs({ query, page, limit });
+  } catch (error) {
+    console.error('EthioJobs via Parse failed, falling back to Remotive:', error.message);
+    const remotive = await fetchFromRemotive({ query: query || 'developer', page });
+    return {
+      ...remotive,
+      provider: 'remotive',
+      country: 'et',
+      ethiojobs_pending: true,
+      parse_error: error.message,
+    };
   }
-
-  const body = await response.json();
-  const { items, total, page: currentPage } = unwrapEthioJobsPayload(body);
-  const jobs = items.map(mapEthioJobsItem);
-
-  return {
-    jobs,
-    total,
-    page: currentPage,
-    demo_mode: false,
-    provider: 'ethiojobs',
-    country: 'et',
-  };
 }
 
-async function fetchFromAdzuna({ query, location, country, page = 1 }) {
+export async function fetchFromAdzuna({ query, location, country, page = 1 }) {
   const appId = process.env.ADZUNA_APP_ID;
   const appKey = process.env.ADZUNA_APP_KEY;
 
