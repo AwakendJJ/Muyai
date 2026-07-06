@@ -5,7 +5,7 @@ import multer from 'multer';
 import { testConnection } from './config/db.js';
 import { initFirebaseAdmin } from './config/firebase.js';
 import { isAIConfigured } from './services/ai.service.js';
-import { getParseConfig } from './config/parse.js';
+import { corsMiddlewareOptions } from './config/cors.js';
 import { checkPhase5Tables } from './config/schemaCheck.js';
 import authRoutes from './routes/auth.routes.js';
 import resumeRoutes from './routes/resume.routes.js';
@@ -23,14 +23,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const corsOptions = process.env.FRONTEND_URL
-  ? {
-      origin: process.env.FRONTEND_URL.split(',').map((url) => url.trim()),
-      credentials: true,
-    }
-  : {};
-
-app.use(cors(corsOptions));
+app.use(cors(corsMiddlewareOptions));
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
