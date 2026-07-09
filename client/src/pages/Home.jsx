@@ -19,6 +19,8 @@ import {
 import LandingNavbar from '../components/landing/LandingNavbar.jsx';
 import LandingFooter from '../components/landing/LandingFooter.jsx';
 import { cn } from '../lib/utils';
+import { BRAND_TAGLINE } from '../config/brand.js';
+import { CURRENCY_LABEL, SUBSCRIPTION_PLANS } from '../config/pricing.js';
 
 const HERO_IMAGE = 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=900&q=80&auto=format&fit=crop';
 const FEATURE_IMAGE = 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80&auto=format&fit=crop';
@@ -114,7 +116,7 @@ const APPS = [
 
 const TESTIMONIALS = [
   {
-    name: 'Amara O.',
+    name: 'Hanan K.',
     role: 'Data Analyst Intern',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80&auto=format&fit=crop&facepad=2',
     quote: 'Muyai showed me exactly what skills I was missing for a data analyst role. I landed an internship within two months.',
@@ -133,35 +135,7 @@ const TESTIMONIALS = [
   },
 ];
 
-const PLANS = [
-  {
-    name: 'Free',
-    price: '$0',
-    desc: 'Perfect to get started',
-    features: ['2 resume scans', 'Basic skill report', 'Proficiency breakdown', 'Dashboard access'],
-    cta: 'Start free',
-    popular: false,
-    accent: 'border-border',
-  },
-  {
-    name: 'Student',
-    price: '$9',
-    desc: 'For serious learners',
-    features: ['Unlimited scans', 'Gap analysis', 'Course recommendations', 'Career paths', 'Interview prep'],
-    cta: 'Get Student',
-    popular: true,
-    accent: 'border-primary ring-2 ring-primary/20',
-  },
-  {
-    name: 'Pro',
-    price: '$19',
-    desc: 'Full career toolkit',
-    features: ['Everything in Student', 'Job matching', 'Cover letters', 'Application tracker', 'Priority AI'],
-    cta: 'Go Pro',
-    popular: false,
-    accent: 'border-border',
-  },
-];
+const PLANS = SUBSCRIPTION_PLANS;
 
 const FAQS = [
   { q: 'Is Muyai free to use?', a: 'Yes. The free plan includes 2 resume scans and a basic skill report. Upgrade to Student for unlimited scans, gap analysis, and recommendations.' },
@@ -194,7 +168,16 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <span className="section-label">
+              <div className="flex items-center gap-3">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/25">
+                  <Sparkles className="h-6 w-6" />
+                </span>
+                <div>
+                  <p className="font-display text-3xl font-bold tracking-tight md:text-4xl">Muyai</p>
+                  <p className="mt-0.5 text-sm font-medium text-primary-dark md:text-base">{BRAND_TAGLINE}</p>
+                </div>
+              </div>
+              <span className="section-label mt-8">
                 <Sparkles className="h-3.5 w-3.5" />
                 AI Career Platform
               </span>
@@ -531,7 +514,7 @@ export default function Home() {
                 Start free. Upgrade when ready.
               </h2>
               <p className="mt-4 text-lg text-gray-text">
-                No credit card required. Cancel anytime.
+                No credit card required. Cancel anytime. Prices in Ethiopian Birr ({CURRENCY_LABEL}).
               </p>
             </motion.div>
 
@@ -555,8 +538,17 @@ export default function Home() {
                   <h3 className="font-display text-2xl font-bold">{plan.name}</h3>
                   <p className="mt-1 text-sm text-gray-text">{plan.desc}</p>
                   <p className="mt-6 font-display text-5xl font-bold">
-                    {plan.price}
-                    <span className="text-base font-normal text-gray-text">/mo</span>
+                    {plan.price === 0 ? (
+                      'Free'
+                    ) : (
+                      <>
+                        <span className="text-lg font-semibold text-primary-dark">{CURRENCY_LABEL}</span>{' '}
+                        {plan.priceDisplay}
+                      </>
+                    )}
+                    {plan.price > 0 && (
+                      <span className="text-base font-normal text-gray-text">/mo</span>
+                    )}
                   </p>
                   <ul className="mt-8 flex-1 space-y-3">
                     {plan.features.map((f) => (

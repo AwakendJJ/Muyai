@@ -17,7 +17,10 @@ import { Button } from '../components/ui/button.jsx';
 import { Skeleton } from '../components/ui/skeleton.jsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs.jsx';
 import { APPS, canAccessApp } from '../config/apps.js';
+import { formatPlanPrice, SUBSCRIPTION_PLANS } from '../config/pricing.js';
 import { useAuth } from '../context/AuthContext.jsx';
+
+const studentPricing = SUBSCRIPTION_PLANS.find((p) => p.id === 'student');
 
 const PLAN_CARDS = {
   free: { color: 'bg-accent-warm', label: 'Free', desc: '2 scans, basic skill report' },
@@ -199,7 +202,11 @@ function CareerDashboardContent({
           <CardContent className="p-6">
             <h3 className="font-bold">Unlock more with Student</h3>
             <p className="mt-1 text-sm text-gray-text">
-              Get unlimited scans, gap analysis, and personalized course recommendations.
+              Get unlimited scans, gap analysis, and personalized course recommendations
+              {studentPricing && (
+                <> — from <span className="font-semibold text-primary-dark">{formatPlanPrice(studentPricing)}/mo</span></>
+              )}
+              .
             </p>
             <Button variant="primary" className="mt-4" asChild>
               <a href="/#pricing">View plans</a>

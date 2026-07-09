@@ -29,7 +29,7 @@ const MOCK_JOBS = [
 ];
 
 const MOCK_CANDIDATES = [
-  { name: 'Amara O.', role: 'Data Analyst', match: 92, status: 'shortlisted', skills: ['Python', 'SQL', 'Excel'] },
+  { name: 'Hanan K.', role: 'Data Analyst', match: 92, status: 'shortlisted', skills: ['Python', 'SQL', 'Excel'] },
   { name: 'Kwame T.', role: 'Software Developer', match: 88, status: 'interview', skills: ['React', 'Node.js', 'TypeScript'] },
   { name: 'Fatima A.', role: 'Product Designer', match: 81, status: 'review', skills: ['Figma', 'UI/UX', 'Research'] },
   { name: 'Daniel M.', role: 'DevOps Engineer', match: 76, status: 'new', skills: ['Docker', 'AWS', 'CI/CD'] },

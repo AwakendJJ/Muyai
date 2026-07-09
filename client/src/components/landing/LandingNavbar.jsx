@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Logo from '../brand/Logo.jsx';
+import { BRAND_TAGLINE } from '../../config/brand.js';
 
 const NAV_LINKS = [
   { href: '#features', label: 'Features' },
@@ -18,7 +19,7 @@ export default function LandingNavbar() {
   return (
     <header className="glass-nav sticky top-0 z-50">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Logo />
+        <Logo tagline={BRAND_TAGLINE} className="max-w-[11rem] sm:max-w-none" />
 
         <nav className="hidden items-center gap-8 md:flex">
           {NAV_LINKS.map((link) => (

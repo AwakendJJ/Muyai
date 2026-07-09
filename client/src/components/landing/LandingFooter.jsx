@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Globe, Mail, Share2 } from 'lucide-react';
 import Logo from '../brand/Logo.jsx';
+import { BRAND_TAGLINE } from '../../config/brand.js';
 
 const FOOTER_LINKS = {
   Product: [
@@ -28,7 +29,7 @@ export default function LandingFooter() {
       <div className="mx-auto max-w-7xl px-6 py-16">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <Logo />
+            <Logo tagline={BRAND_TAGLINE} />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-gray-text">
               AI-powered career development built for African students and early-career
               professionals. Discover your skills, close gaps, and grow with confidence.
