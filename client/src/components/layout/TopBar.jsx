@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Bell } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import Logo from '../brand/Logo.jsx';
+import NotificationDropdown from './NotificationDropdown.jsx';
 import PlanBadge from '../PlanBadge.jsx';
 import { Avatar, AvatarFallback } from '../ui/avatar.jsx';
 import { Button } from '../ui/button.jsx';
@@ -37,9 +37,7 @@ export default function TopBar({ onMenuClick }) {
       <div className="hidden lg:block" />
 
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="text-gray-text" aria-label="Notifications">
-          <Bell className="h-5 w-5" />
-        </Button>
+        <NotificationDropdown />
 
         <PlanBadge plan={user?.plan} />
 

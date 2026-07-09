@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, FileText } from 'lucide-react';
+import { ArrowRight, Briefcase, FileText, LayoutDashboard } from 'lucide-react';
 import * as resumesApi from '../api/resumes.js';
 import * as applicationsApi from '../api/applications.js';
+import CareerProgress from '../components/dashboard/CareerProgress.jsx';
+import RecruiterDashboard from '../components/dashboard/RecruiterDashboard.jsx';
 import SkillProficiencyChart from '../components/charts/SkillProficiencyChart.jsx';
 import AppShell from '../components/layout/AppShell.jsx';
 import PageHeader from '../components/layout/PageHeader.jsx';
@@ -13,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.
 import { Badge } from '../components/ui/badge.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Skeleton } from '../components/ui/skeleton.jsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs.jsx';
 import { APPS, canAccessApp } from '../config/apps.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -24,57 +27,30 @@ const PLAN_CARDS = {
 
 const LAUNCHER_APPS = APPS.filter((a) => !a.adminOnly && a.id !== 'profile');
 
-export default function Dashboard() {
-  const { user, token } = useAuth();
-  const [resumes, setResumes] = useState([]);
-  const [skills, setSkills] = useState([]);
-  const [scanCount, setScanCount] = useState(0);
-  const [scanLimit, setScanLimit] = useState(null);
-  const [appStats, setAppStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([
-      resumesApi.listResumes(token),
-      applicationsApi.getApplicationStats(token).catch(() => ({ data: { stats: null } })),
-    ])
-      .then(async ([resumeResponse, appResponse]) => {
-        setResumes(resumeResponse.data.resumes);
-        setScanCount(resumeResponse.data.scan_count);
-        setScanLimit(resumeResponse.data.scan_limit);
-        setAppStats(appResponse.data.stats);
-
-        if (resumeResponse.data.resumes.length > 0) {
-          const skillsRes = await resumesApi.getSkills(token, resumeResponse.data.resumes[0].id);
-          setSkills(skillsRes.data.skills);
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [token]);
-
-  const planCard = PLAN_CARDS[user?.plan] || PLAN_CARDS.free;
-
-  if (loading) {
-    return (
-      <AppShell>
-        <div className="space-y-6">
-          <Skeleton className="h-10 w-64" />
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-28" />
-            ))}
-          </div>
-        </div>
-      </AppShell>
-    );
-  }
+function CareerDashboardContent({
+  user,
+  planCard,
+  scanCount,
+  scanLimit,
+  skills,
+  resumes,
+  appStats,
+}) {
+  const hasResume = resumes.length > 0;
+  const hasSkills = skills.length > 0;
+  const hasApplications = (appStats?.total ?? 0) > 0;
+  const hasInterviewStage = (appStats?.interviewing ?? 0) > 0 || (appStats?.offer ?? 0) > 0;
 
   return (
-    <AppShell>
-      <PageHeader
-        title={`Welcome, ${user?.name?.split(' ')[0] || 'there'}`}
-        description="Your career development hub"
-      />
+    <>
+      <div className="mt-8">
+        <CareerProgress
+          hasResume={hasResume}
+          hasSkills={hasSkills}
+          hasApplications={hasApplications}
+          hasInterviewStage={hasInterviewStage}
+        />
+      </div>
 
       <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -231,6 +207,91 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+    </>
+  );
+}
+
+export default function Dashboard() {
+  const { user, token } = useAuth();
+  const [resumes, setResumes] = useState([]);
+  const [skills, setSkills] = useState([]);
+  const [scanCount, setScanCount] = useState(0);
+  const [scanLimit, setScanLimit] = useState(null);
+  const [appStats, setAppStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      resumesApi.listResumes(token),
+      applicationsApi.getApplicationStats(token).catch(() => ({ data: { stats: null } })),
+    ])
+      .then(async ([resumeResponse, appResponse]) => {
+        setResumes(resumeResponse.data.resumes);
+        setScanCount(resumeResponse.data.scan_count);
+        setScanLimit(resumeResponse.data.scan_limit);
+        setAppStats(appResponse.data.stats);
+
+        if (resumeResponse.data.resumes.length > 0) {
+          const skillsRes = await resumesApi.getSkills(token, resumeResponse.data.resumes[0].id);
+          setSkills(skillsRes.data.skills);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const planCard = PLAN_CARDS[user?.plan] || PLAN_CARDS.free;
+
+  if (loading) {
+    return (
+      <AppShell>
+        <div className="space-y-6">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-32 w-full" />
+          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-28" />
+            ))}
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  return (
+    <AppShell>
+      <PageHeader
+        title={`Welcome, ${user?.name?.split(' ')[0] || 'there'}`}
+        description="Your career development hub"
+      />
+
+      <Tabs defaultValue="career" className="mt-6">
+        <TabsList>
+          <TabsTrigger value="career" className="gap-2">
+            <LayoutDashboard className="h-4 w-4" />
+            My career
+          </TabsTrigger>
+          <TabsTrigger value="recruiter" className="gap-2">
+            <Briefcase className="h-4 w-4" />
+            Recruiter hub
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="career">
+          <CareerDashboardContent
+            user={user}
+            planCard={planCard}
+            scanCount={scanCount}
+            scanLimit={scanLimit}
+            skills={skills}
+            resumes={resumes}
+            appStats={appStats}
+          />
+        </TabsContent>
+
+        <TabsContent value="recruiter">
+          <RecruiterDashboard />
+        </TabsContent>
+      </Tabs>
     </AppShell>
   );
 }
