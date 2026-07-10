@@ -55,10 +55,27 @@ export async function sync(req, res) {
     });
   } catch (error) {
     console.error('Sync error:', error);
+
+    if (error.message?.includes('Firebase Admin is not configured')) {
+      return res.status(503).json({
+        success: false,
+        data: null,
+        error: 'Server auth is not configured. Set FIREBASE_* environment variables on the API server.',
+      });
+    }
+
+    if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
+      return res.status(401).json({
+        success: false,
+        data: null,
+        error: 'Invalid or expired sign-in token. Please try again.',
+      });
+    }
+
     res.status(500).json({
       success: false,
       data: null,
-      error: 'Failed to sync user',
+      error: error.message || 'Failed to sync user',
     });
   }
 }

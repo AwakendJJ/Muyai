@@ -7,6 +7,7 @@ import { initFirebaseAdmin } from './config/firebase.js';
 import { isAIConfigured } from './services/ai.service.js';
 import { corsMiddlewareOptions } from './config/cors.js';
 import { checkPhase5Tables } from './config/schemaCheck.js';
+import { getParseConfig } from './config/parse.js';
 import authRoutes from './routes/auth.routes.js';
 import resumeRoutes from './routes/resume.routes.js';
 import analysisRoutes from './routes/analysis.routes.js';

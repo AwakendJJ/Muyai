@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import ErrorBanner from '../components/ErrorBanner.jsx';
@@ -31,6 +31,12 @@ export default function Login() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (authReady && !loading && isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [authReady, loading, isAuthenticated, from, navigate]);
+
   if (authReady && !loading && isAuthenticated) {
     return <Navigate to={from} replace />;
   }
@@ -41,10 +47,8 @@ export default function Login() {
     setSubmitting(true);
     try {
       await login(email, password);
-      navigate(from, { replace: true });
     } catch (err) {
       setError(err.message);
-    } finally {
       setSubmitting(false);
     }
   }
@@ -54,13 +58,17 @@ export default function Login() {
     setSubmitting(true);
     try {
       await loginWithGoogle();
-      navigate(from, { replace: true });
     } catch (err) {
       setError(err.message);
-    } finally {
       setSubmitting(false);
     }
   }
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setSubmitting(false);
+    }
+  }, [isAuthenticated]);
 
   return (
     <AuthLayout

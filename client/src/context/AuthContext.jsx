@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -16,18 +16,36 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [loading, setLoading] = useState(true);
+  const lastSyncedUidRef = useRef(null);
+  const syncInFlightRef = useRef(null);
 
   const clearSession = useCallback(() => {
     setUser(null);
     setToken(null);
+    lastSyncedUidRef.current = null;
   }, []);
 
-  const syncUser = useCallback(async (firebaseUser) => {
-    const idToken = await firebaseUser.getIdToken();
-    const response = await authApi.syncUser(idToken);
-    setToken(idToken);
-    setUser(response.data.user);
-    return response.data.user;
+  const syncUser = useCallback(async (firebaseUser, body = {}) => {
+    if (syncInFlightRef.current) {
+      return syncInFlightRef.current;
+    }
+
+    const syncPromise = (async () => {
+      const idToken = await firebaseUser.getIdToken();
+      const response = await authApi.syncUser(idToken, body);
+      setToken(idToken);
+      setUser(response.data.user);
+      lastSyncedUidRef.current = firebaseUser.uid;
+      return response.data.user;
+    })();
+
+    syncInFlightRef.current = syncPromise;
+
+    try {
+      return await syncPromise;
+    } finally {
+      syncInFlightRef.current = null;
+    }
   }, []);
 
   const logout = useCallback(async () => {
@@ -37,21 +55,19 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (name, email, password) => {
     const credential = await createUserWithEmailAndPassword(auth, email, password);
-    const idToken = await credential.user.getIdToken();
-    await authApi.syncUser(idToken, { name });
+    await syncUser(credential.user, { name });
     await signOut(auth);
     clearSession();
     return { email };
-  }, [clearSession]);
+  }, [clearSession, syncUser]);
 
   const registerWithGoogle = useCallback(async () => {
     const credential = await signInWithPopup(auth, googleProvider);
-    const idToken = await credential.user.getIdToken();
-    await authApi.syncUser(idToken);
+    await syncUser(credential.user);
     await signOut(auth);
     clearSession();
     return { email: credential.user.email };
-  }, [clearSession]);
+  }, [clearSession, syncUser]);
 
   const login = useCallback(async (email, password) => {
     const credential = await signInWithEmailAndPassword(auth, email, password);
@@ -77,8 +93,6 @@ export function AuthProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!active) return;
 
-      setLoading(true);
-
       if (!firebaseUser) {
         clearSession();
         setAuthReady(true);
@@ -86,12 +100,28 @@ export function AuthProvider({ children }) {
         return;
       }
 
+      if (firebaseUser.uid === lastSyncedUidRef.current) {
+        setAuthReady(true);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+
       try {
         await syncUser(firebaseUser);
       } catch (error) {
         console.error('Auth sync failed:', error);
-        await signOut(auth);
-        clearSession();
+        const message = error?.message || '';
+        const isAuthError =
+          message.includes('Authentication required') ||
+          message.includes('Invalid or expired') ||
+          message.includes('auth/');
+
+        if (isAuthError) {
+          await signOut(auth);
+          clearSession();
+        }
       } finally {
         if (active) {
           setAuthReady(true);
